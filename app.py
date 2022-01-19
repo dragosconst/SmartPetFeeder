@@ -109,3 +109,24 @@ def get_tanks_status():
     response = Response(f"The remaining quantities of food in the tanks are: {value}.")
     response.headers['tanks_status'] = value
     return response
+
+@app.route("/action/give_water", methods=['GET'])
+def give_water():
+    myObj.tanks[0] = myObj.tanks[0] - 20
+    response = Response("Water bowl refilled")
+    print(myObj)
+    return response
+
+@app.route("/action/give_wet_food", methods=['GET'])
+def give_wet_food():
+    myObj.tanks[1] = myObj.tanks[1] - myObj.feeding_limit
+    response = Response("Wet food bowl refilled")
+    print(myObj)
+    return response
+
+@app.route("/action/give_dry_food", methods=['GET'])
+def give_dry_food():
+    myObj.tanks[2] = myObj.tanks[2] - myObj.feeding_limit
+    response = Response("Dry food bowl refilled")
+    print(myObj)
+    return response
