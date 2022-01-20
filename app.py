@@ -1,10 +1,10 @@
 from flask import Flask
 from flask import request
 from flask import Response
-from PetFeeder import PetFeederClass, PetTypes
+from PetFeeder import PetFeederClass, PetTypes, Tanks
 import re
 
-myObj = PetFeederClass(feeding_intervals = [], feeding_limit = 10, inactivity_period = 450, heating_temperature = 15, tanks = [200, 500, 400], pet = PetTypes.DOG)
+myObj = PetFeederClass(feeding_hours = [], feeding_limit = 10, inactivity_period = 450, heating_temperature = 15, tanks = [200, 500, 400], pet = PetTypes.DOG)
 
 app = Flask(__name__)
 
@@ -38,12 +38,12 @@ def set_feeding_limit():
     except ValueError:
         return "Invalid value!", 406
 
-@app.route("/set/feeding_intervals/", methods=['POST'])
-def set_feeding_intervals():
+@app.route("/set/feeding_hours/", methods=['POST'])
+def set_feeding_hours():
     re_moment = r'(\d?\d):(\d?\d)'
     try:
-        values = request.headers["feeding_intervals"] # [11:30, 12:45, 19:20, 13:22]
-        oldValues = myObj.feeding_intervals
+        values = request.headers["feeding_hours"] # [11:30, 12:45, 19:20, 13:22]
+        oldValues = myObj.feeding_hours
         new = []
         for moment in values.split(','):
             x = re.search(re_moment, moment)
@@ -54,7 +54,7 @@ def set_feeding_intervals():
             if hour > 23 or minute > 59:
                 raise ValueError
             new.append((hour, minute))
-        myObj.feeding_intervals = new
+        myObj.feeding_hours = new
         msg = f"Feeding intervals changed from {oldValues} to {new}!"
         #print(myObj)
         return(msg)
@@ -89,11 +89,11 @@ def get_feeding_limit():
     response.headers['feeding_limit'] = value
     return response
 
-@app.route("/get/feeding_intervals/", methods=['GET'])
-def get_feeding_intervals():
-    value = myObj.feeding_intervals
-    response = Response(f"The feeding intervals are: {value}.")
-    response.headers['feeding_intervals'] = value
+@app.route("/get/feeding_hours/", methods=['GET'])
+def get_feeding_hours():
+    value = myObj.feeding_hours
+    response = Response(f"The feeding hours are: {value}.")
+    response.headers['feeding_hours'] = value
     return response
 
 @app.route("/get/inactivity_period/", methods=['GET'])
@@ -111,22 +111,40 @@ def get_tanks_status():
     return response
 
 @app.route("/action/give_water", methods=['GET'])
-def give_water():
-    myObj.tanks[0] = myObj.tanks[0] - 20
-    response = Response("Water bowl refilled")
+def give_water(): 
+    args = request.args
+    q = args.get("q", default=Tanks.WATER_DEFAULT, type=int)
+
+    if q > myObj.tanks[Tanks.WATER]:
+        return Response("Not enough water left in the tank!") 
+
+    myObj.tanks[Tanks.WATER] -= q
+    response = Response("Water bowl refilled!")
     print(myObj)
     return response
 
 @app.route("/action/give_wet_food", methods=['GET'])
 def give_wet_food():
-    myObj.tanks[1] = myObj.tanks[1] - myObj.feeding_limit
-    response = Response("Wet food bowl refilled")
+    args = request.args
+    q = args.get("q", default=Tanks.WET_FOOD_DEFAULT, type=int)
+
+    if q > myObj.tanks[Tanks.WET_FOOD]:
+        return Response("Not enough wet food left in the tank!") 
+
+    myObj.tanks[Tanks.WET_FOOD] -= q
+    response = Response("Wet food bowl refilled!")
     print(myObj)
     return response
 
 @app.route("/action/give_dry_food", methods=['GET'])
 def give_dry_food():
-    myObj.tanks[2] = myObj.tanks[2] - myObj.feeding_limit
-    response = Response("Dry food bowl refilled")
+    args = request.args
+    q = args.get("q", default=Tanks.DRY_FOOD_DEFAULT, type=int)
+
+    if q > myObj.tanks[Tanks.DRY_FOOD]:
+        return Response("Not enough dry food left in the tank!") 
+
+    myObj.tanks[Tanks.DRY_FOOD] -= q
+    response = Response("Dry food bowl refilled!")
     print(myObj)
     return response

@@ -1,16 +1,16 @@
 import dearpygui.dearpygui as dpg
 from dearpygui.demo import show_demo
 import requests
-from PetFeeder import PetFeederClass, PetTypes
+from PetFeeder import PetFeederClass, PetTypes, Tanks
 
-objCopy = PetFeederClass(feeding_intervals = [], feeding_limit = 0, inactivity_period = 0, heating_temperature = 0, tanks = [0, 0, 0], pet = PetTypes.DOG)
+objCopy = PetFeederClass(feeding_hours = [], feeding_limit = 0, inactivity_period = 0, heating_temperature = 0, tanks = [0, 0, 0], pet = PetTypes.DOG)
 
 dpg.create_context()
 
-def getFeedingIntervals():
-    req = requests.get('http://127.0.0.1:5000/get/feeding_intervals')
+def getFeedingHours():
+    req = requests.get('http://127.0.0.1:5000/get/feeding_hours')
     if req.status_code == 200:
-        values = req.headers["feeding_intervals"]
+        values = req.headers["feeding_hours"]
         values = values.replace("[", "")
         values = values.replace("]", "")
         values = values.replace("),", ");")
@@ -23,7 +23,7 @@ def getFeedingIntervals():
             hour = int(moment.split(",")[0])
             minute = int(moment.split(",")[1])
             new.append((hour, minute))
-        objCopy.feeding_intervals = new
+        objCopy.feeding_hours = new
         print(type(new))
 
 def getFeedingLimit():
@@ -101,9 +101,9 @@ def getTanksStatus():
 
 def reloadTanksStatus():
     getTanksStatus()
-    dpg.set_value("WaterTank", "Water:    " + str(objCopy.tanks[0]) + " g")
-    dpg.set_value("WetFoodTank", "Wet Food: " + str(objCopy.tanks[1]) + " g")
-    dpg.set_value("DryFoodTank", "Dry food: " + str(objCopy.tanks[2]) + " g")
+    dpg.set_value("WaterTank", "Water:    " + str(objCopy.tanks[Tanks.WATER]) + " g")
+    dpg.set_value("WetFoodTank", "Wet Food: " + str(objCopy.tanks[Tanks.WET_FOOD]) + " g")
+    dpg.set_value("DryFoodTank", "Dry food: " + str(objCopy.tanks[Tanks.DRY_FOOD]) + " g")
 
 def giveWater():
     req = requests.get('http://127.0.0.1:5000/action/give_water')
@@ -142,9 +142,9 @@ with dpg.window(label = "Heating Temperature", width = 180, height = 130, pos = 
     dpg.add_button(label = "-", callback = decreaseHeatingTemperature)
 
 with dpg.window(label = "Tanks Status", width = 180, height = 130, pos = (540, 0)):
-    dpg.add_text("Water:    " + str(objCopy.tanks[0]) + " g", id = "WaterTank")
-    dpg.add_text("Wet Food: " + str(objCopy.tanks[1]) + " g", id = "WetFoodTank")
-    dpg.add_text("Dry food: " + str(objCopy.tanks[2]) + " g", id = "DryFoodTank")
+    dpg.add_text("Water:    " + str(objCopy.tanks[Tanks.WATER]) + " g", id = "WaterTank")
+    dpg.add_text("Wet Food: " + str(objCopy.tanks[Tanks.WET_FOOD]) + " g", id = "WetFoodTank")
+    dpg.add_text("Dry food: " + str(objCopy.tanks[Tanks.DRY_FOOD]) + " g", id = "DryFoodTank")
     dpg.add_button(label = "Reload", callback = reloadTanksStatus)
 
 with dpg.window(label = "Actions", width = 180, height = 130, pos = (0, 130)):
