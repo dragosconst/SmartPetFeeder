@@ -6,6 +6,7 @@ from PetFeeder import PetFeederClass, PetTypes, Tanks
 import re
 import db
 import eventlet
+import ast
 
 app = None
 myObj = None
@@ -23,10 +24,57 @@ def init_app():
         SECRET_KEY='dev',
     )
     
-    myObj = PetFeederClass(feeding_hours = [], feeding_limit = 10, inactivity_period = 450, heating_temperature = 15, tanks = [200, 500, 400], pet = PetTypes.DOG)
+    myObj = PetFeederClass(feeding_hours = [(10, 00)], feeding_limit = 100, inactivity_period = 450, heating_temperature = 15, tanks = [200, 500, 400], pet = PetTypes.DOG)
+
     db.init_app(app)
     with app.app_context():
         db.init_db()
+        database = db.get_db()
+
+        # Load the most recent values from the database.
+        cursor = database.cursor()
+        cursor.execute('SELECT hours FROM FEEDING_HOURS ORDER BY id')
+        rows = cursor.fetchall()
+        if len(rows) > 0:
+            values = rows[-1]['hours']
+            re_moment = r'(\d?\d):(\d?\d)'
+            new = []
+            for moment in values.split(','):
+                x = re.search(re_moment, moment)
+                if x is None:
+                    raise ValueError
+                hour = int(x.group(1))
+                minute = int(x.group(2))
+                if hour > 23 or minute > 59:
+                    raise ValueError
+                new.append((hour, minute))
+            myObj.feeding_hours = new
+
+        cursor = database.cursor()
+        cursor.execute('SELECT val FROM FEEDING_LIMITS ORDER BY id')
+        rows = cursor.fetchall()
+        if len(rows) > 0:
+            myObj.feeding_limit = float(rows[-1]['val'])
+
+        cursor = database.cursor()
+        cursor.execute('SELECT period FROM INACTIVITY_PERIODS ORDER BY id')
+        rows = cursor.fetchall()
+        if len(rows) > 0:
+            myObj.inactivity_period = float(rows[-1]['period'])
+
+        cursor = database.cursor()
+        cursor.execute('SELECT temperature FROM HEATING_TEMPERATURES ORDER BY id')
+        rows = cursor.fetchall()
+        if len(rows) > 0:
+            myObj.heating_temperature = float(rows[-1]['temperature'])
+
+        cursor = database.cursor()
+        cursor.execute('SELECT quantities FROM TANKS_STATES ORDER BY id')
+        rows = cursor.fetchall()
+        if len(rows) > 0:
+            myObj.tanks = ast.literal_eval(rows[-1]['quantities'])
+        print(myObj)
+    
 
     @app.route("/")
     def hello_world():
@@ -59,7 +107,13 @@ def init_app():
             oldValue = myObj.feeding_limit
             myObj.feeding_limit = value
             msg = f"Feeding limit changed from {oldValue} g to {value} g!"
-            print(myObj)
+            database = db.get_db()
+            database.execute(
+                'INSERT INTO FEEDING_LIMITS (val)'
+                ' VALUES (?)',
+                (value,)
+            )
+            database.commit()
             return(msg)
         except ValueError:
             return "Invalid value!", 406
@@ -82,7 +136,13 @@ def init_app():
                 new.append((hour, minute))
             myObj.feeding_hours = new
             msg = f"Feeding intervals changed from {oldValues} to {new}!"
-            #print(myObj)
+            database = db.get_db()
+            database.execute(
+                'INSERT INTO FEEDING_HOURS (hours)'
+                ' VALUES (?)',
+                (values,)
+            )
+            database.commit()
             return(msg)
         except ValueError:
             return "Invalid value!", 406
@@ -96,7 +156,13 @@ def init_app():
             oldValue = myObj.inactivity_period
             myObj.inactivity_period = value
             msg = f"Inactivity period changed from {oldValue} minutes to {value} minutes!"
-            print(myObj)
+            database = db.get_db()
+            database.execute(
+                'INSERT INTO INACTIVITY_PERIODS (period)'
+                ' VALUES (?)',
+                (value,)
+            )
+            database.commit()
             return(msg)
         except ValueError:
             return "Invalid value!", 406
@@ -136,7 +202,7 @@ def init_app():
         response.headers['tanks_status'] = value
         return response
 
-    @app.route("/action/give_water", methods=['GET'])
+    @app.route("/action/give_water/", methods=['GET'])
     def give_water(): 
         args = request.args
         q = args.get("q", default=Tanks.WATER_DEFAULT, type=int)
@@ -146,10 +212,16 @@ def init_app():
 
         myObj.tanks[Tanks.WATER] -= q
         response = Response("Water bowl refilled!")
-        print(myObj)
+        database = db.get_db()
+        database.execute(
+            'INSERT INTO TANKS_STATES (quantities)'
+            ' VALUES (?)',
+            (str(myObj.tanks),)
+        )
+        database.commit()
         return response
 
-    @app.route("/action/give_wet_food", methods=['GET'])
+    @app.route("/action/give_wet_food/", methods=['GET'])
     def give_wet_food():
         args = request.args
         q = args.get("q", default=Tanks.WET_FOOD_DEFAULT, type=int)
@@ -159,10 +231,16 @@ def init_app():
 
         myObj.tanks[Tanks.WET_FOOD] -= q
         response = Response("Wet food bowl refilled!")
-        print(myObj)
+        database = db.get_db()
+        database.execute(
+            'INSERT INTO TANKS_STATES (quantities)'
+            ' VALUES (?)',
+            (str(myObj.tanks),)
+        )
+        database.commit()
         return response
 
-    @app.route("/action/give_dry_food", methods=['GET'])
+    @app.route("/action/give_dry_food/", methods=['GET'])
     def give_dry_food():
         args = request.args
         q = args.get("q", default=Tanks.DRY_FOOD_DEFAULT, type=int)
@@ -172,8 +250,20 @@ def init_app():
 
         myObj.tanks[Tanks.DRY_FOOD] -= q
         response = Response("Dry food bowl refilled!")
-        print(myObj)
+        database = db.get_db()
+        database.execute(
+            'INSERT INTO TANKS_STATES (quantities)'
+            ' VALUES (?)',
+            (str(myObj.tanks),)
+        )
+        database.commit()
         return response
+
+    @app.route("/action/fill_tanks/", methods=['GET'])
+    def fill_tanks():
+        myObj.tanks = [200, 500, 400]
+        response = Response("All tanks refilled!")
+        return response 
 
     return app
 
