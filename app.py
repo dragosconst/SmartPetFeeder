@@ -1,3 +1,4 @@
+import threading
 from flask import Flask
 from flask import request
 from flask import Response
@@ -6,6 +7,8 @@ from PetFeeder import PetFeederClass, PetTypes, Tanks
 import re
 import db
 import eventlet
+from enum import Enum
+import time
 
 app = None
 myObj = None
@@ -177,6 +180,106 @@ def init_app():
 
     return app
 
+
+data_file = open("pet_data.csv", "r")
+turned_on = True
+data_file.readline() # read the header
+
+# the device's sensors
+class Sensors(Enum):
+    water_temp = 0
+    wet_food_temp = 1
+    dry_food_temp = 2
+    pet_leash = 3
+
+class myTime:
+    def __init__(self, hour, minute, day, month, year):
+        self.hour = hour
+        self.minute = minute
+        self.day = day
+        self.month = month
+        self.year = year
+    
+    def increaseTime(self):
+        self.minute = self.minute + 5
+        if self.minute == 60:
+            self.hour = self.hour + 1
+            self.minute = 0
+            if self.hour == 24:
+                self.hour = 0
+                self.day = self.day + 1
+                # for simulation purposes only
+                # we do not expect to simulate more that a month, hence we did not implement full functionality for this function
+    def show(self):
+        return str(self.hour) + ":" + str(self.minute) + " , " + str(self.day) + "." + str(self.month) + "." + str(self.year)
+
+def timeEquals(a, b):
+    if(a.hour == b.hour):
+        if(a.minute == b.minute):
+            if(a.day == b.day):
+                if(a.month == b.month):
+                    if(a.year == b.year):
+                        return True
+    
+    return False
+
+def timeNotEquals(a, b):
+    if(a.hour == b.hour):
+        if(a.minute == b.minute):
+            if(a.day == b.day):
+                if(a.month == b.month):
+                    if(a.year == b.year):
+                        return False
+    
+    return True
+
+currentTime = myTime(10, 0, 1, 1, 2022) # 10:00, 1 January 2022
+def simulation():
+    global turned_on
+    global currentTime
+    readOn = True
+    while turned_on:
+        if(readOn):
+            next_line = data_file.readline().split(",")
+            readOn = False # don't read again until the time is met
+            try:
+                for i in range(len(next_line)):
+                    next_line[i] = int(next_line[i])
+                next_data_time = myTime(next_line[0], next_line[1], next_line[2], next_line[3], next_line[4])
+                next_data_sensor = next_line[5]
+                next_data_value = next_line[6]
+            except:
+                turned_on = False
+        to_print1 = currentTime.show() + ": "
+        to_print2 = " "
+        
+        if timeEquals(currentTime, next_data_time):
+            readOn = True # the time has been met, read again
+            next_data_time.year = 2000 # fix a bug where sometimes it writes the value twice
+            if next_data_sensor == 0:
+                if next_data_value < myObj.heating_temperature:
+                    to_print2 = "Water temperature at " + str(next_data_value) + " °C, starting heating"
+                else:
+                    to_print2 = "Water temperature at " + str(next_data_value) + " °C"
+            # repeat for every sensor
+
+        else:
+            currentTime.increaseTime()
+        final = to_print1 + to_print2
+        
+        print(final)
+        
+        
+        time.sleep(1)
+    print("Finished simulation")
+        
+
+
+
 if __name__ == '__main__':
     init_app()
+    
+    x = threading.Thread(target = simulation)
+    x.start()
+    
     run_socketio_app()
