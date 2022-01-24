@@ -213,25 +213,9 @@ class myTime:
     def show(self):
         return str(self.hour) + ":" + str(self.minute) + " , " + str(self.day) + "." + str(self.month) + "." + str(self.year)
 
-def timeEquals(a, b):
-    if(a.hour == b.hour):
-        if(a.minute == b.minute):
-            if(a.day == b.day):
-                if(a.month == b.month):
-                    if(a.year == b.year):
-                        return True
-    
-    return False
-
-def timeNotEquals(a, b):
-    if(a.hour == b.hour):
-        if(a.minute == b.minute):
-            if(a.day == b.day):
-                if(a.month == b.month):
-                    if(a.year == b.year):
-                        return False
-    
-    return True
+    def __eq__(self, other):
+        return self.hour == other.hour and self.minute == other.minute and self.day == other.day and self.month == other.month \
+            and self.year == other.year
 
 currentTime = myTime(10, 0, 1, 1, 2022) # 10:00, 1 January 2022
 def simulation():
@@ -253,7 +237,7 @@ def simulation():
         to_print1 = currentTime.show() + ": "
         to_print2 = " "
         
-        if timeEquals(currentTime, next_data_time):
+        if currentTime == next_data_time:
             readOn = True # the time has been met, read again
             next_data_time.year = 2000 # fix a bug where sometimes it writes the value twice
             if next_data_sensor == 0:
