@@ -2,20 +2,52 @@ from flask import Flask
 from flask import request
 from flask import Response
 from flask_socketio import SocketIO
+from flask_mqtt import Mqtt
 from PetFeeder import PetFeederClass, PetTypes, Tanks
 import re
 import db
 import eventlet
 import ast
 
+eventlet.monkey_patch()
+
 app = None
 myObj = None
 socketio = None
+mqtt = None
 
 def run_socketio_app():
     global socketio 
     socketio = SocketIO(app, async_mode="eventlet")
     socketio.run(app, host='localhost', port=5000, use_reloader=False, debug=True)
+
+def init_mqtt():
+    global mqtt
+    
+    # Setup connection to mqtt broker
+    app.config['MQTT_BROKER_URL'] = 'localhost'  # Mosquitto Broker
+    app.config['MQTT_BROKER_PORT'] = 1883
+    app.config['MQTT_USERNAME'] = ''
+    app.config['MQTT_PASSWORD'] = ''
+    app.config['MQTT_KEEPALIVE'] = 5 
+    app.config['MQTT_TLS_ENABLED'] = False 
+
+    mqtt = Mqtt(app)
+    mqtt.subscribe('/SmartPetFeeder/heating_temperature')
+    mqtt.subscribe('/SmartPetFeeder/feeding_limit')
+    mqtt.subscribe('/SmartPetFeeder/inactivity_period')
+    mqtt.subscribe('/SmartPetFeeder/feeding_hours')
+    mqtt.subscribe('/SmartPetFeeder/tanks_status')
+
+    @mqtt.on_message()
+    def handle_mqtt_message(client, userdata, message):
+        data = dict(
+            topic=message.topic,
+            payload=message.payload.decode()
+        )
+        print(data)
+
+    return mqtt
 
 def init_app():
     global app, myObj
@@ -94,6 +126,7 @@ def init_app():
                 (value,)
             )
             database.commit()
+            mqtt.publish('/SmartPetFeeder/heating_temperature', value)
             return(msg)
         except ValueError:
             return "Invalid value!", 406
@@ -113,6 +146,7 @@ def init_app():
                 ' VALUES (?)',
                 (value,)
             )
+            mqtt.publish('/SmartPetFeeder/feeding_limit', value)
             database.commit()
             return(msg)
         except ValueError:
@@ -143,6 +177,7 @@ def init_app():
                 (values,)
             )
             database.commit()
+            mqtt.publish('/SmartPetFeeder/feeding_hours', values)
             return(msg)
         except ValueError:
             return "Invalid value!", 406
@@ -163,6 +198,7 @@ def init_app():
                 (value,)
             )
             database.commit()
+            mqtt.publish('/SmartPetFeeder/inactivity_period', value)
             return(msg)
         except ValueError:
             return "Invalid value!", 406
@@ -219,6 +255,7 @@ def init_app():
             (str(myObj.tanks),)
         )
         database.commit()
+        mqtt.publish('/SmartPetFeeder/tanks_status', str(myObj.tanks))
         return response
 
     @app.route("/action/give_wet_food/", methods=['GET'])
@@ -238,6 +275,7 @@ def init_app():
             (str(myObj.tanks),)
         )
         database.commit()
+        mqtt.publish('/SmartPetFeeder/tanks_status', str(myObj.tanks))
         return response
 
     @app.route("/action/give_dry_food/", methods=['GET'])
@@ -257,16 +295,19 @@ def init_app():
             (str(myObj.tanks),)
         )
         database.commit()
+        mqtt.publish('/SmartPetFeeder/tanks_status', str(myObj.tanks))
         return response
 
     @app.route("/action/fill_tanks/", methods=['GET'])
     def fill_tanks():
         myObj.tanks = [200, 500, 400]
         response = Response("All tanks refilled!")
+        mqtt.publish('/SmartPetFeeder/tanks_status', str(myObj.tanks))
         return response 
 
     return app
 
 if __name__ == '__main__':
     init_app()
+    init_mqtt()
     run_socketio_app()
