@@ -11,6 +11,8 @@ import eventlet
 import ast
 import time
 import threading
+import copy
+import requests
 
 eventlet.monkey_patch()
 
@@ -18,6 +20,14 @@ app = None
 myObj = None
 socketio = None
 mqtt = None
+
+def publish(mqtt, topic, value):
+    if mqtt is not None:
+        publish(mqtt, topic, value)
+
+def subscribe(mqtt, topic):
+    if mqtt is not None:
+        subscribe(mqtt,topic)
 
 def run_socketio_app():
     global socketio 
@@ -35,20 +45,24 @@ def init_mqtt():
     app.config['MQTT_KEEPALIVE'] = 5 
     app.config['MQTT_TLS_ENABLED'] = False 
 
-    mqtt = Mqtt(app)
-    mqtt.subscribe('/SmartPetFeeder/heating_temperature')
-    mqtt.subscribe('/SmartPetFeeder/feeding_limit')
-    mqtt.subscribe('/SmartPetFeeder/inactivity_period')
-    mqtt.subscribe('/SmartPetFeeder/feeding_hours')
-    mqtt.subscribe('/SmartPetFeeder/tanks_status')
+    
+    try:
+        mqtt = Mqtt(app)
+        subscribe(mqtt,'/SmartPetFeeder/heating_temperature')
+        subscribe(mqtt,'/SmartPetFeeder/feeding_limit')
+        subscribe(mqtt,'/SmartPetFeeder/inactivity_period')
+        subscribe(mqtt,'/SmartPetFeeder/feeding_hours')
+        subscribe(mqtt,'/SmartPetFeeder/tanks_status')
 
-    @mqtt.on_message()
-    def handle_mqtt_message(client, userdata, message):
-        data = dict(
-            topic=message.topic,
-            payload=message.payload.decode()
-        )
-        print(data)
+        @mqtt.on_message()
+        def handle_mqtt_message(client, userdata, message):
+            data = dict(
+                topic=message.topic,
+                payload=message.payload.decode()
+            )
+            print(data)
+    except:
+        mqtt = None
 
     return mqtt
 
@@ -129,7 +143,7 @@ def init_app():
                 (value,)
             )
             database.commit()
-            mqtt.publish('/SmartPetFeeder/heating_temperature', value)
+            publish(mqtt, '/SmartPetFeeder/heating_temperature', value)
             return(msg)
         except ValueError:
             return "Invalid value!", 406
@@ -149,7 +163,7 @@ def init_app():
                 ' VALUES (?)',
                 (value,)
             )
-            mqtt.publish('/SmartPetFeeder/feeding_limit', value)
+            publish(mqtt, '/SmartPetFeeder/feeding_limit', value)
             database.commit()
             return(msg)
         except ValueError:
@@ -180,7 +194,7 @@ def init_app():
                 (values,)
             )
             database.commit()
-            mqtt.publish('/SmartPetFeeder/feeding_hours', values)
+            publish(mqtt, '/SmartPetFeeder/feeding_hours', values)
             return(msg)
         except ValueError:
             return "Invalid value!", 406
@@ -201,7 +215,7 @@ def init_app():
                 (value,)
             )
             database.commit()
-            mqtt.publish('/SmartPetFeeder/inactivity_period', value)
+            publish(mqtt, '/SmartPetFeeder/inactivity_period', value)
             return(msg)
         except ValueError:
             return "Invalid value!", 406
@@ -258,7 +272,7 @@ def init_app():
             (str(myObj.tanks),)
         )
         database.commit()
-        mqtt.publish('/SmartPetFeeder/tanks_status', str(myObj.tanks))
+        publish(mqtt, '/SmartPetFeeder/tanks_status', str(myObj.tanks))
         return response
 
     @app.route("/action/give_wet_food/", methods=['GET'])
@@ -278,7 +292,7 @@ def init_app():
             (str(myObj.tanks),)
         )
         database.commit()
-        mqtt.publish('/SmartPetFeeder/tanks_status', str(myObj.tanks))
+        publish(mqtt, '/SmartPetFeeder/tanks_status', str(myObj.tanks))
         return response
 
     @app.route("/action/give_dry_food/", methods=['GET'])
@@ -298,14 +312,14 @@ def init_app():
             (str(myObj.tanks),)
         )
         database.commit()
-        mqtt.publish('/SmartPetFeeder/tanks_status', str(myObj.tanks))
+        publish(mqtt, '/SmartPetFeeder/tanks_status', str(myObj.tanks))
         return response
 
     @app.route("/action/fill_tanks/", methods=['GET'])
     def fill_tanks():
         myObj.tanks = [200, 500, 400]
         response = Response("All tanks refilled!")
-        mqtt.publish('/SmartPetFeeder/tanks_status', str(myObj.tanks))
+        publish(mqtt, '/SmartPetFeeder/tanks_status', str(myObj.tanks))
         return response 
 
     return app
@@ -318,10 +332,11 @@ data_file.readline() # read the header
 class Sensors(Enum):
     water_temp = 0
     wet_food_temp = 1
-    dry_food_temp = 2
-    pet_leash = 3
+    pet_collar = 2
 
 class myTime:
+    passing_minutes = 5
+
     def __init__(self, hour, minute, day, month, year):
         self.hour = hour
         self.minute = minute
@@ -329,13 +344,13 @@ class myTime:
         self.month = month
         self.year = year
     
-    def increaseTime(self):
-        self.minute = self.minute + 5
-        if self.minute == 60:
+    def increaseTime(self, increasing_minutes = passing_minutes):
+        self.minute = self.minute + increasing_minutes
+        if self.minute >= 60:
             self.hour = self.hour + 1
-            self.minute = 0
-            if self.hour == 24:
-                self.hour = 0
+            self.minute = self.minute % 60
+            if self.hour >= 24:
+                self.hour = self.hour % 24
                 self.day = self.day + 1
                 # for simulation purposes only
                 # we do not expect to simulate more that a month, hence we did not implement full functionality for this function
@@ -346,10 +361,29 @@ class myTime:
         return self.hour == other.hour and self.minute == other.minute and self.day == other.day and self.month == other.month \
             and self.year == other.year
 
+    def __le__(self, other):
+        if self.year < other.year:
+            return True
+        if self.year == other.year:
+            if self.month < other.month:
+                return True
+            if self.month == other.month:
+                if self.day < other.day:
+                    return True
+                if self.day == other.day:
+                    if self.hour < other.hour:
+                        return True
+                    if self.hour == other.hour:
+                        if self.minute <= other.minute:
+                            return True
+        return False
+
 currentTime = myTime(10, 0, 1, 1, 2022) # 10:00, 1 January 2022
+timeSincePetDetection = 0
 def simulation():
     global turned_on
     global currentTime
+    global timeSincePetDetection
     readOn = True
     while turned_on:
         if(readOn):
@@ -362,22 +396,50 @@ def simulation():
                 next_data_sensor = next_line[5]
                 next_data_value = next_line[6]
             except:
+                next_data_time = myTime(0, 0, 1, 1, 3000)
                 turned_on = False
         to_print1 = currentTime.show() + ": "
         to_print2 = " "
         
-        if currentTime == next_data_time:
+        if next_data_time <= currentTime:
             readOn = True # the time has been met, read again
-            next_data_time.year = 2000 # fix a bug where sometimes it writes the value twice
-            if next_data_sensor == 0:
+            #next_data_time.year = 2000 # fix a bug where sometimes it writes the value twice
+            if next_data_sensor == Sensors.water_temp.value:
                 if next_data_value < myObj.heating_temperature:
-                    to_print2 = "Water temperature at " + str(next_data_value) + " °C, starting heating"
+                    to_print2 = "Water temperature at " + str(next_data_value) + " °C, heating"
                 else:
                     to_print2 = "Water temperature at " + str(next_data_value) + " °C"
+                publish(mqtt, '/SmartPetFeeder/water_temp', next_data_value)
+            elif next_data_sensor == Sensors.wet_food_temp.value:
+                if next_data_value < myObj.heating_temperature:
+                    to_print2 = "Wet food temperature at " + str(next_data_value) + " °C, heating"
+                else:
+                    to_print2 = "Wet food temperature at " + str(next_data_value) + " °C"
+                publish(mqtt, '/SmartPetFeeder/wet_food_temp', next_data_value)
+            elif next_data_sensor == Sensors.pet_collar.value:
+                timeSincePetDetection = 0
+                to_print2 = "Pet detected"
+                publish(mqtt, '/SmartPetFeeder/detection_warning', to_print2)
             # repeat for every sensor
-
         else:
+            futureTime = copy.deepcopy(currentTime)
             currentTime.increaseTime()
+
+            timeSincePetDetection += myTime.passing_minutes
+            if timeSincePetDetection > myObj.inactivity_period:
+                to_print2 = f"Warning, pet has not eaten for {timeSincePetDetection} minutes!"
+                publish(mqtt, '/SmartPetFeeder/detection_warning', to_print2)
+
+            for i in range(myTime.passing_minutes):
+                futureTime.increaseTime(1)
+                hour = futureTime.hour
+                minute = futureTime.minute
+                if (hour, minute) in myObj.feeding_hours:
+                    requests.get('http://[::1]:5000/action/give_water/?q=50')
+                    requests.get('http://[::1]:5000/action/give_wet_food/')
+                    requests.get('http://[::1]:5000/action/give_dry_food/')
+                    to_print2 = f"Bowls refilled!"
+
         final = to_print1 + to_print2
         
         print(final)
