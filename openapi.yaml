@@ -1,0 +1,302 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: SmartPetFeeder
+  description: OpenAPI Specification
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  contact:
+    name: Hello, world!
+    url: https://github.com/dragosconst/SmartPetFeeder
+servers:
+  - url: http://[::1]:5000/
+paths:
+  /get/heating_temperature/:
+    get:
+      operationId: get_heating_temperature
+      description: Get the current heating temperature
+      tags:
+        - get
+      responses:
+        '200':
+          description: Succesfully retrieved the heating temperature
+          headers:
+            heating_temperature:
+              schema:
+                type: number
+                format: float
+  /get/feeding_limit/:
+    get:
+      operationId: get_feeding_temperature
+      description: Get the current feeding limit
+      tags:
+        - get
+      responses:
+        '200':
+          description: Succesfully retrieved the feeding limit
+          headers:
+            feeding_limit:
+              schema:
+                type: number
+                format: float
+  /get/feeding_hours/:
+    get:
+      operationId: get_feeding_hours
+      description: Get the feeding hours for the pet
+      tags:
+        - get
+      responses:
+        '200':
+          description: Succesfully retrieved the feeding hours
+          headers:
+            feeding_hours:
+              schema:
+                type: array
+                items:
+                  type: string
+  /get/inactivity_period/:
+    get:
+      operationId: get_inactivity_period
+      description: Get the inactivity period after which an alert is issued
+      tags:
+        - get
+      responses:
+        '200':
+          description: Succesfully retrieved the inactivity period
+          headers:
+            inactivity_period:
+              schema:
+                type: number
+                format: float
+  /get/tanks_status/:
+    get:
+      operationId: get_tanks_status
+      description: Get the current quantities of food left in each tank
+      tags:
+        - get
+      responses:
+        '200':
+          description: Succesfully retrieved the quantities
+          headers:
+            tanks_status:
+              schema:
+                type: array
+                items:
+                  type: number
+                  format: float       
+  /set/heating_temperature/:
+    post:
+      operationId: set_heating_temperature
+      description: Set the heating temperature
+      tags:
+        - set
+      parameters:
+        - in: header
+          name: heating_temperature
+          schema:
+            type: number
+            format: float
+          required: true
+      responses:
+        '200':
+          description: Succesfully set the heating temperature
+          content:
+            text/plain; charset=utf-8:
+              schema: {}
+        '406':
+          description: Invalid value
+          content:
+            text/plain; charset=utf-8:
+              schema: {}              
+  /set/feeding_limit/:
+    post:
+      operationId: set_feeding_limit
+      description: Set the feeding limit for the pet
+      tags:
+        - set
+      parameters:
+        - in: header
+          name: feeding_limit
+          schema:
+            type: number
+            format: float
+          required: true
+      responses:
+        '200':
+          description: Succesfully set the feeding limit
+          content:
+            text/plain; charset=utf-8:
+              schema: {}
+        '406':
+          description: Invalid value
+          content:
+            text/plain; charset=utf-8:
+              schema: {}              
+  /set/feeding_hours/:
+    post:
+      operationId: set_feeding_hours
+      description: Set the feeding hours for the pet
+      tags:
+        - set
+      parameters:
+        - in: header
+          name: feeding_hours
+          schema:
+            type: array
+            items:
+              type: string
+          required: true
+      responses:
+        '200':
+          description: Succesfully set the feeding hours
+          content:
+            text/plain; charset=utf-8:
+              schema: {}
+        '406':
+          description: Invalid value
+          content:
+            text/plain; charset=utf-8:
+              schema: {}        
+  /set/inactivity_period/:
+    post:
+      operationId: set_inactivity_period
+      description: Set the inactivity period after which an alert is issued
+      tags:
+        - set
+      parameters:
+        - in: header
+          name: inactivity_period
+          schema:
+            type: number
+            format: float
+          required: true
+      responses:
+        '200':
+          description: Succesfully set the inactivity period
+          content:
+            text/plain; charset=utf-8:
+              schema: {}
+        '406':
+          description: Invalid value
+          content:
+            text/plain; charset=utf-8:
+              schema: {}
+  /action/give_water/:
+    get:
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: number
+            format: float
+          description: The amount of water (in mL)
+      operationId: action_give_water
+      description: Fill the water bowl with a specified quantity
+      tags:
+        - action
+      responses:
+        '200':
+          description: Succesfully filled the water bowl
+          content:
+            text/plain; charset=utf-8:
+              schema: {}
+        '406':
+          description: Not enough water left in the tank
+          content:
+            text/plain; charset=utf-8:
+              schema: {}
+  /action/give_wet_food/:
+    get:
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: number
+            format: float
+          description: The amount of wet food (in grams)
+      operationId: action_wet_food
+      description: Fill the wet food bowl with a specified quantity
+      tags:
+        - action
+      responses:
+        '200':
+          description: Succesfully filled the wet food bowl
+          content:
+            text/plain; charset=utf-8:
+              schema: {}
+        '406':
+          description: Not enough wet food left in the tank
+          content:
+            text/plain; charset=utf-8:
+              schema: {}
+  /action/give_dry_food/:
+    get:
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: number
+            format: float
+          description: The amount of dry food (in grams)
+      operationId: action_dry_food
+      description: Fill the dry food bowl with a specified quantity
+      tags:
+        - action
+      responses:
+        '200':
+          description: Succesfully filled the dry food bowl
+          content:
+            text/plain; charset=utf-8:
+              schema: {}
+        '406':
+          description: Not enough dry food left in the tank
+          content:
+            text/plain; charset=utf-8:
+              schema: {}
+  /action/fill_tanks/:
+    get:
+      operationId: action_fill_tanks
+      description: Refill the tanks with the default quantities
+      tags:
+        - action
+      responses:
+        '200':
+          description: Succesfully filled the tanks
+          content:
+            text/plain; charset=utf-8:
+              schema: {}
+components:
+  schemas:
+    HeatingTemperature:
+      type: object
+      properties:
+        heating_temperature:
+          type: number
+          format: float
+    FeedingLimit:
+      type: object
+      properties:
+        feeding_limit:
+          type: number
+          format: float
+    FeedingHours:
+      type: object
+      properties:
+        feeding_hours:
+          type: array
+          items:
+            type: string
+    InactivityPeriod:
+      type: object
+      properties:
+        inactivity_period:
+          type: integer
+    TanksStatus:
+      type: object
+      properties:
+        tanks_status:
+          type: array
+          items:
+            type: number
+            format: float

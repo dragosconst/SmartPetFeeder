@@ -261,7 +261,7 @@ def init_app():
         q = args.get("q", default=Tanks.WATER_DEFAULT, type=int)
 
         if q > myObj.tanks[Tanks.WATER]:
-            return Response("Not enough water left in the tank!") 
+            return Response("Not enough water left in the tank!", status=406) 
 
         myObj.tanks[Tanks.WATER] -= q
         response = Response("Water bowl refilled!")
@@ -281,7 +281,7 @@ def init_app():
         q = args.get("q", default=Tanks.WET_FOOD_DEFAULT, type=int)
 
         if q > myObj.tanks[Tanks.WET_FOOD]:
-            return Response("Not enough wet food left in the tank!") 
+            return Response("Not enough wet food left in the tank!", status=406) 
 
         myObj.tanks[Tanks.WET_FOOD] -= q
         response = Response("Wet food bowl refilled!")
@@ -301,7 +301,7 @@ def init_app():
         q = args.get("q", default=Tanks.DRY_FOOD_DEFAULT, type=int)
 
         if q > myObj.tanks[Tanks.DRY_FOOD]:
-            return Response("Not enough dry food left in the tank!") 
+            return Response("Not enough dry food left in the tank!", status=406) 
 
         myObj.tanks[Tanks.DRY_FOOD] -= q
         response = Response("Dry food bowl refilled!")
