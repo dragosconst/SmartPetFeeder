@@ -23,11 +23,11 @@ mqtt = None
 
 def publish(mqtt, topic, value):
     if mqtt is not None:
-        publish(mqtt, topic, value)
+        mqtt.publish(topic, value)
 
 def subscribe(mqtt, topic):
     if mqtt is not None:
-        subscribe(mqtt,topic)
+        mqtt.subscribe(topic)
 
 def run_socketio_app():
     global socketio 
@@ -61,8 +61,10 @@ def init_mqtt():
                 payload=message.payload.decode()
             )
             print(data)
+        print("Connected to MQTT broker!")
     except:
         mqtt = None
+        print("Could not connect to MQTT broker!")
 
     return mqtt
 
@@ -333,9 +335,12 @@ class Sensors(Enum):
     water_temp = 0
     wet_food_temp = 1
     pet_collar = 2
+    water_mass = 3
+    wet_food_mass = 4
+    dry_food_mass = 5
 
 class myTime:
-    passing_minutes = 5
+    passing_minutes = 7
 
     def __init__(self, hour, minute, day, month, year):
         self.hour = hour
@@ -420,16 +425,28 @@ def simulation():
                 timeSincePetDetection = 0
                 to_print2 = "Pet detected"
                 publish(mqtt, '/SmartPetFeeder/detection_warning', to_print2)
+            elif next_data_sensor == Sensors.water_mass.value:
+                myObj.tanks[Tanks.WATER] = next_data_value
+                to_print2 = f"Water mass has changed to {next_data_value} g"
+                publish(mqtt, '/SmartPetFeeder/water_mass', next_data_value)
+            elif next_data_sensor == Sensors.wet_food_mass.value:
+                myObj.tanks[Tanks.WET_FOOD] = next_data_value
+                to_print2 = f"Wet food mass has changed to {next_data_value} g"
+                publish(mqtt, '/SmartPetFeeder/wet_food_mass', next_data_value)
+            elif next_data_sensor == Sensors.dry_food_mass.value:
+                myObj.tanks[Tanks.DRY_FOOD] = next_data_value
+                to_print2 = f"Dry food mass has changed to {next_data_value} g"
+                publish(mqtt, '/SmartPetFeeder/dry_food_mass', next_data_value)
             # repeat for every sensor
         else:
-            futureTime = copy.deepcopy(currentTime)
-            currentTime.increaseTime()
-
-            timeSincePetDetection += myTime.passing_minutes
             if timeSincePetDetection > myObj.inactivity_period:
                 to_print2 = f"Warning, pet has not eaten for {timeSincePetDetection} minutes!"
                 publish(mqtt, '/SmartPetFeeder/detection_warning', to_print2)
 
+            futureTime = copy.deepcopy(currentTime)
+            currentTime.increaseTime()
+            timeSincePetDetection += myTime.passing_minutes
+            
             for i in range(myTime.passing_minutes):
                 futureTime.increaseTime(1)
                 hour = futureTime.hour
@@ -451,6 +468,11 @@ def simulation():
 if __name__ == '__main__':
     init_app()
     init_mqtt()
-    x = threading.Thread(target = simulation)
-    x.start()
+
+    choice = input('Run in simulation mode? Y/[N]\n')
+    if choice.upper() == 'Y':
+        # TODO: start thread after socketio
+        x = threading.Thread(target = simulation)
+        x.start()
+
     run_socketio_app()
