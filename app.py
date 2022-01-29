@@ -260,6 +260,8 @@ def init_app():
             food = "water"
         elif food_type == Tanks.WET_FOOD:
             food = "wet food"
+            if q > petFeeder.feeding_limit:
+                q = petFeeder.feeding_limit
         else:
             food = "dry food"
         if q > petFeeder.tanks[food_type]:
