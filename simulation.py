@@ -13,6 +13,7 @@ class Sensors():
     water_mass = 3
     wet_food_mass = 4
     dry_food_mass = 5
+    movement = 6
 
 
 class myTime:
@@ -103,7 +104,7 @@ def simulation(data_file, petFeeder, mqtt, thread_waiting):
             elif next_data_sensor == Sensors.pet_collar:
                 timeSincePetDetection = 0
                 to_print2 = "Pet detected"
-                publish(mqtt, '/SmartPetFeeder/detection_warning', to_print2)
+                publish(mqtt, '/SmartPetFeeder/pet_detection_warning', to_print2)
             elif next_data_sensor == Sensors.water_mass:
                 petFeeder.tanks[Tanks.WATER] = next_data_value
                 to_print2 = f"Water mass has changed to {next_data_value} g"
@@ -116,11 +117,14 @@ def simulation(data_file, petFeeder, mqtt, thread_waiting):
                 petFeeder.tanks[Tanks.DRY_FOOD] = next_data_value
                 to_print2 = f"Dry food mass has changed to {next_data_value} g"
                 publish(mqtt, '/SmartPetFeeder/dry_food_mass', next_data_value)
+            elif next_data_sensor == Sensors.movement:
+                to_print2 = f"Movement detected!"
+                publish(mqtt, '/SmartPetFeeder/movement_detection', to_print2)
             # repeat for every sensor
         else:
             if timeSincePetDetection > petFeeder.inactivity_period:
                 to_print2 = f"Warning, pet has not eaten for {timeSincePetDetection} minutes!"
-                publish(mqtt, '/SmartPetFeeder/detection_warning', to_print2)
+                publish(mqtt, '/SmartPetFeeder/pet_detection_warning', to_print2)
 
             futureTime = copy.deepcopy(currentTime)
             currentTime.increaseTime()
