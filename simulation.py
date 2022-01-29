@@ -1,6 +1,7 @@
 import time
 from PetFeeder import Tanks
 from utils import publish, subscribe
+import utils
 import copy
 import requests
 
@@ -61,7 +62,9 @@ class myTime:
         return False
 
 
-def simulation(data_file, petFeeder, mqtt):
+def simulation(data_file, petFeeder, mqtt, thread_waiting):
+    thread_waiting.join()
+    utils.simMutex.acquire()
     turned_on = True
     currentTime = myTime(10, 0, 1, 1, 2022)  # 10:00, 1 January 2022
     timeSincePetDetection = 0
@@ -139,3 +142,15 @@ def simulation(data_file, petFeeder, mqtt):
 
         time.sleep(1)
     print("Finished simulation")
+    utils.simMutex.release()
+
+def wait_for_response():
+    utils.simMutex.acquire()
+    noResponse = True
+    while noResponse:
+        try:
+            status_code = requests.get('http://[::1]:5000/').status_code
+            noResponse = False
+        except:
+            time.sleep(0.001)
+    utils.simMutex.release()
