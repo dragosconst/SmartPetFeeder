@@ -253,64 +253,54 @@ def init_app():
         response.headers['tanks_status'] = value
         return response
 
+    def _get_food_response(args, default_amount, food_type):
+        q = args.get("q", default=default_amount, type=int)
+
+        if food_type == Tanks.WATER:
+            food = "water"
+        elif food_type == Tanks.WET_FOOD:
+            food = "wet food"
+        else:
+            food = "dry food"
+        if q > petFeeder.tanks[food_type]:
+            return Response("Not enough " + food + " left in the tank!", status=406)
+
+        petFeeder.tanks[food_type] -= q
+        return Response(food.capitalize() + " bowl refilled!")
+
+    def _insert_tank_states(simulation):
+        if simulation is False:
+            database = db.get_db()
+            database.execute(
+                'INSERT INTO TANKS_STATES (quantities)'
+                ' VALUES (?)',
+                (str(petFeeder.tanks),)
+            )
+            database.commit()
+        publish(mqtt, '/SmartPetFeeder/tanks_status', str(petFeeder.tanks))
+
     @app.route("/action/give_water/", methods=['GET'])
     def give_water(): 
         args = request.args
-        q = args.get("q", default=Tanks.WATER_DEFAULT, type=int)
+        response = _get_food_response(args, Tanks.WATER_DEFAULT, Tanks.WATER)
 
-        if q > petFeeder.tanks[Tanks.WATER]:
-            return Response("Not enough water left in the tank!", status=406) 
-
-        petFeeder.tanks[Tanks.WATER] -= q
-        response = Response("Water bowl refilled!")
-        database = db.get_db()
-        database.execute(
-            'INSERT INTO TANKS_STATES (quantities)'
-            ' VALUES (?)',
-            (str(petFeeder.tanks),)
-        )
-        database.commit()
-        publish(mqtt, '/SmartPetFeeder/tanks_status', str(petFeeder.tanks))
+        _insert_tank_states("simulation" in request.headers)
         return response
 
     @app.route("/action/give_wet_food/", methods=['GET'])
     def give_wet_food():
         args = request.args
-        q = args.get("q", default=Tanks.WET_FOOD_DEFAULT, type=int)
 
-        if q > petFeeder.tanks[Tanks.WET_FOOD]:
-            return Response("Not enough wet food left in the tank!", status=406) 
-
-        petFeeder.tanks[Tanks.WET_FOOD] -= q
-        response = Response("Wet food bowl refilled!")
-        database = db.get_db()
-        database.execute(
-            'INSERT INTO TANKS_STATES (quantities)'
-            ' VALUES (?)',
-            (str(petFeeder.tanks),)
-        )
-        database.commit()
-        publish(mqtt, '/SmartPetFeeder/tanks_status', str(petFeeder.tanks))
+        response = _get_food_response(args, Tanks.WET_FOOD_DEFAULT, Tanks.WET_FOOD)
+        _insert_tank_states("simulation" in request.headers)
         return response
 
     @app.route("/action/give_dry_food/", methods=['GET'])
     def give_dry_food():
         args = request.args
-        q = args.get("q", default=Tanks.DRY_FOOD_DEFAULT, type=int)
 
-        if q > petFeeder.tanks[Tanks.DRY_FOOD]:
-            return Response("Not enough dry food left in the tank!", status=406) 
-
-        petFeeder.tanks[Tanks.DRY_FOOD] -= q
-        response = Response("Dry food bowl refilled!")
-        database = db.get_db()
-        database.execute(
-            'INSERT INTO TANKS_STATES (quantities)'
-            ' VALUES (?)',
-            (str(petFeeder.tanks),)
-        )
-        database.commit()
-        publish(mqtt, '/SmartPetFeeder/tanks_status', str(petFeeder.tanks))
+        response = _get_food_response(args, Tanks.DRY_FOOD_DEFAULT, Tanks.DRY_FOOD)
+        _insert_tank_states("simulation" in request.headers)
         return response
 
     @app.route("/action/fill_tanks/", methods=['GET'])

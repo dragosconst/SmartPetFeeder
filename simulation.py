@@ -131,9 +131,9 @@ def simulation(data_file, petFeeder, mqtt, thread_waiting):
                 hour = futureTime.hour
                 minute = futureTime.minute
                 if (hour, minute) in petFeeder.feeding_hours:
-                    requests.get('http://[::1]:5000/action/give_water/?q=50')
-                    requests.get('http://[::1]:5000/action/give_wet_food/')
-                    requests.get('http://[::1]:5000/action/give_dry_food/')
+                    requests.get('http://[::1]:5000/action/give_water/?q=50', headers={"simulation": str(True)})
+                    requests.get('http://[::1]:5000/action/give_wet_food/', headers={"simulation": str(True)})
+                    requests.get('http://[::1]:5000/action/give_dry_food/', headers={"simulation": str(True)})
                     to_print2 = f"Bowls refilled!"
 
         final = to_print1 + to_print2
@@ -152,5 +152,5 @@ def wait_for_response():
             status_code = requests.get('http://[::1]:5000/').status_code
             noResponse = False
         except:
-            time.sleep(0.001)
+            continue
     utils.simMutex.release()
