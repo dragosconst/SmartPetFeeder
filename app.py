@@ -4,6 +4,8 @@ from flask import Response
 from flask_socketio import SocketIO
 from flask_mqtt import Mqtt
 from PetFeeder import PetFeederClass, PetTypes, Tanks
+from simulation import simulation
+from utils import publish, subscribe
 from enum import Enum
 import re
 import db
@@ -12,7 +14,7 @@ import ast
 import time
 import threading
 import copy
-import requests
+
 
 eventlet.monkey_patch()
 
@@ -21,13 +23,6 @@ myObj = None
 socketio = None
 mqtt = None
 
-def publish(mqtt, topic, value):
-    if mqtt is not None:
-        mqtt.publish(topic, value)
-
-def subscribe(mqtt, topic):
-    if mqtt is not None:
-        mqtt.subscribe(topic)
 
 def run_socketio_app():
     global socketio 
@@ -327,143 +322,9 @@ def init_app():
     return app
   
 data_file = open("pet_data.csv", "r")
-turned_on = True
+turned_on = True # why global?
 data_file.readline() # read the header
 
-# the device's sensors
-class Sensors(Enum):
-    water_temp = 0
-    wet_food_temp = 1
-    pet_collar = 2
-    water_mass = 3
-    wet_food_mass = 4
-    dry_food_mass = 5
-
-class myTime:
-    passing_minutes = 7
-
-    def __init__(self, hour, minute, day, month, year):
-        self.hour = hour
-        self.minute = minute
-        self.day = day
-        self.month = month
-        self.year = year
-    
-    def increaseTime(self, increasing_minutes = passing_minutes):
-        self.minute = self.minute + increasing_minutes
-        if self.minute >= 60:
-            self.hour = self.hour + 1
-            self.minute = self.minute % 60
-            if self.hour >= 24:
-                self.hour = self.hour % 24
-                self.day = self.day + 1
-                # for simulation purposes only
-                # we do not expect to simulate more that a month, hence we did not implement full functionality for this function
-    def show(self):
-        return str(self.hour) + ":" + str(self.minute) + " , " + str(self.day) + "." + str(self.month) + "." + str(self.year)
-
-    def __eq__(self, other):
-        return self.hour == other.hour and self.minute == other.minute and self.day == other.day and self.month == other.month \
-            and self.year == other.year
-
-    def __le__(self, other):
-        if self.year < other.year:
-            return True
-        if self.year == other.year:
-            if self.month < other.month:
-                return True
-            if self.month == other.month:
-                if self.day < other.day:
-                    return True
-                if self.day == other.day:
-                    if self.hour < other.hour:
-                        return True
-                    if self.hour == other.hour:
-                        if self.minute <= other.minute:
-                            return True
-        return False
-
-currentTime = myTime(10, 0, 1, 1, 2022) # 10:00, 1 January 2022
-timeSincePetDetection = 0
-def simulation():
-    global turned_on
-    global currentTime
-    global timeSincePetDetection
-    readOn = True
-    while turned_on:
-        if(readOn):
-            next_line = data_file.readline().split(",")
-            readOn = False # don't read again until the time is met
-            try:
-                for i in range(len(next_line)):
-                    next_line[i] = int(next_line[i])
-                next_data_time = myTime(next_line[0], next_line[1], next_line[2], next_line[3], next_line[4])
-                next_data_sensor = next_line[5]
-                next_data_value = next_line[6]
-            except:
-                next_data_time = myTime(0, 0, 1, 1, 3000)
-                turned_on = False
-        to_print1 = currentTime.show() + ": "
-        to_print2 = " "
-        
-        if next_data_time <= currentTime:
-            readOn = True # the time has been met, read again
-            #next_data_time.year = 2000 # fix a bug where sometimes it writes the value twice
-            if next_data_sensor == Sensors.water_temp.value:
-                if next_data_value < myObj.heating_temperature:
-                    to_print2 = "Water temperature at " + str(next_data_value) + " °C, heating"
-                else:
-                    to_print2 = "Water temperature at " + str(next_data_value) + " °C"
-                publish(mqtt, '/SmartPetFeeder/water_temp', next_data_value)
-            elif next_data_sensor == Sensors.wet_food_temp.value:
-                if next_data_value < myObj.heating_temperature:
-                    to_print2 = "Wet food temperature at " + str(next_data_value) + " °C, heating"
-                else:
-                    to_print2 = "Wet food temperature at " + str(next_data_value) + " °C"
-                publish(mqtt, '/SmartPetFeeder/wet_food_temp', next_data_value)
-            elif next_data_sensor == Sensors.pet_collar.value:
-                timeSincePetDetection = 0
-                to_print2 = "Pet detected"
-                publish(mqtt, '/SmartPetFeeder/detection_warning', to_print2)
-            elif next_data_sensor == Sensors.water_mass.value:
-                myObj.tanks[Tanks.WATER] = next_data_value
-                to_print2 = f"Water mass has changed to {next_data_value} g"
-                publish(mqtt, '/SmartPetFeeder/water_mass', next_data_value)
-            elif next_data_sensor == Sensors.wet_food_mass.value:
-                myObj.tanks[Tanks.WET_FOOD] = next_data_value
-                to_print2 = f"Wet food mass has changed to {next_data_value} g"
-                publish(mqtt, '/SmartPetFeeder/wet_food_mass', next_data_value)
-            elif next_data_sensor == Sensors.dry_food_mass.value:
-                myObj.tanks[Tanks.DRY_FOOD] = next_data_value
-                to_print2 = f"Dry food mass has changed to {next_data_value} g"
-                publish(mqtt, '/SmartPetFeeder/dry_food_mass', next_data_value)
-            # repeat for every sensor
-        else:
-            if timeSincePetDetection > myObj.inactivity_period:
-                to_print2 = f"Warning, pet has not eaten for {timeSincePetDetection} minutes!"
-                publish(mqtt, '/SmartPetFeeder/detection_warning', to_print2)
-
-            futureTime = copy.deepcopy(currentTime)
-            currentTime.increaseTime()
-            timeSincePetDetection += myTime.passing_minutes
-            
-            for i in range(myTime.passing_minutes):
-                futureTime.increaseTime(1)
-                hour = futureTime.hour
-                minute = futureTime.minute
-                if (hour, minute) in myObj.feeding_hours:
-                    requests.get('http://[::1]:5000/action/give_water/?q=50')
-                    requests.get('http://[::1]:5000/action/give_wet_food/')
-                    requests.get('http://[::1]:5000/action/give_dry_food/')
-                    to_print2 = f"Bowls refilled!"
-
-        final = to_print1 + to_print2
-        
-        print(final)
-        
-        
-        time.sleep(1)
-    print("Finished simulation")
 
 if __name__ == '__main__':
     init_app()
@@ -472,7 +333,7 @@ if __name__ == '__main__':
     choice = input('Run in simulation mode? Y/[N]\n')
     if choice.upper() == 'Y':
         # TODO: start thread after socketio
-        x = threading.Thread(target = simulation)
+        x = threading.Thread(target = simulation, args=(data_file, myObj, mqtt))
         x.start()
 
     run_socketio_app()
