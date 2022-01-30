@@ -12,7 +12,7 @@ import re
 import db
 import eventlet
 import ast
-import time
+import datetime
 from threading import Thread, Lock
 import copy
 
@@ -24,11 +24,11 @@ petFeeder = None
 socketio = None
 mqtt = None
 
-
 def run_socketio_app():
     global socketio
     socketio = SocketIO(app, async_mode="eventlet")
     socketio.run(app, host='localhost', port=5000, use_reloader=False, debug=True)
+
 
 def init_mqtt():
     global mqtt
@@ -49,15 +49,92 @@ def init_mqtt():
         subscribe(mqtt,'/SmartPetFeeder/inactivity_period')
         subscribe(mqtt,'/SmartPetFeeder/feeding_hours')
         subscribe(mqtt,'/SmartPetFeeder/tanks_status')
+        subscribe(mqtt, '/SmartPetFeeder/water_temp')
+        subscribe(mqtt, '/SmartPetFeeder/wet_food_temp')
+        subscribe(mqtt, '/SmartPetFeeder/pet_detection_warning')
+        subscribe(mqtt, '/SmartPetFeeder/water_mass')
+        subscribe(mqtt, '/SmartPetFeeder/wet_food_mass')
+        subscribe(mqtt, '/SmartPetFeeder/dry_food_mass')
+        subscribe(mqtt, '/SmartPetFeeder/movement_detection')
 
         @mqtt.on_message()
-        def handle_mqtt_message(client, userdata, message):
+        def mqtt_thread(client, userdata, message):
             data = dict(
                 topic=message.topic,
                 payload=message.payload.decode()
             )
-            print(data)
+
+            if data['topic'] == '/SmartPetFeeder/water_temp':
+                current_temp = data['payload'].split(';')
+                timestamp = str(datetime.datetime.now())
+                # this is for data sent by the simulation, which uses its own fake timestamp
+                if len(current_temp) > 1:
+                    timestamp = current_temp[1]
+                current_temp = float(current_temp[0])
+                desired_temp = petFeeder.heating_temperature # shouldn't there be separate temperature for water and wet food?
+
+                if desired_temp != current_temp:
+                    print(timestamp + f": Water temp is {current_temp}, heating to {desired_temp}.")
+            elif data['topic'] == '/SmartPetFeeder/wet_food_temp':
+                current_temp = data['payload'].split(';')
+                timestamp = str(datetime.datetime.now())
+                if len(current_temp) > 1:
+                    timestamp = current_temp[1]
+                current_temp = float(current_temp[0])
+                desired_temp = petFeeder.heating_temperature  # shouldn't there be separate temperature for water and wet food?
+
+                if desired_temp != current_temp:
+                    print(timestamp + f": Wet food temp is {current_temp}, heating to {desired_temp}.")
+            elif data['topic'] == '/SmartPetFeeder/pet_detection_warning':
+                msg = data['payload'].split(';')
+                timestamp = str(datetime.datetime.now())
+                if len(msg) > 1:
+                    timestamp = msg[1]
+
+                msg = msg[0]
+                print(timestamp + ": " + msg)
+            elif data['topic'] == '/SmartPetFeeder/water_mass':
+                new_water_mass = data['payload'].split(';')
+                timestamp = str(datetime.datetime.now())
+                if len(new_water_mass) > 1:
+                    timestamp = new_water_mass[1]
+                new_water_mass = float(new_water_mass[0])
+
+                old_water_mass = petFeeder.tanks[Tanks.WATER]
+                print(timestamp + f": Changed water mass from {old_water_mass} g to {new_water_mass} g.")
+                petFeeder.tanks[Tanks.WATER] = new_water_mass
+            elif data['topic'] == '/SmartPetFeeder/wet_food_mass':
+                new_wet_food_mass = data['payload'].split(';')
+                timestamp = str(datetime.datetime.now())
+                if len(new_wet_food_mass) > 1:
+                    timestamp = new_wet_food_mass[1]
+                new_wet_food_mass = float(new_wet_food_mass[0])
+
+                old_wet_food_mass = petFeeder.tanks[Tanks.WET_FOOD]
+                print(timestamp + f": Changed wet food mass from {old_wet_food_mass} g to {new_wet_food_mass} g.")
+                petFeeder.tanks[Tanks.WET_FOOD] = new_wet_food_mass
+            elif data['topic'] == '/SmartPetFeeder/dry_food_mass':
+                new_dry_food_mass = data['payload'].split(';')
+                timestamp = str(datetime.datetime.now())
+                if len(new_dry_food_mass) > 1:
+                    timestamp = new_dry_food_mass[1]
+                new_dry_food_mass = float(new_dry_food_mass[0])
+
+                old_dry_food_mass = petFeeder.tanks[Tanks.DRY_FOOD]
+                print(timestamp + f": Changed dry food mass from {old_dry_food_mass} g to {new_dry_food_mass} g.")
+                petFeeder.tanks[Tanks.DRY_FOOD] = new_dry_food_mass
+            elif data['topic'] == '/SmartPetFeeder/movement_detection':
+                msg = data['payload'].split(';')
+                timestamp = str(datetime.datetime.now())
+                if len(msg) > 1:
+                    timestamp = msg[1]
+                msg = msg[0]
+
+                print(timestamp + ": " + msg)
+
+
         print("Connected to MQTT broker!")
+
     except:
         mqtt = None
         print("Could not connect to MQTT broker!")
