@@ -38,7 +38,8 @@ class myTime:
                 # we do not expect to simulate more that a month, hence we did not implement full functionality for this function
 
     def show(self):
-        return str(self.hour) + ":" + str(self.minute) + " , " + str(self.day) + "." + str(self.month) + "." + str(
+        return str(self.hour).zfill(2) + ":" + str(self.minute).zfill(2) + " , " + str(self.day).zfill(2) \
+            + "." + str(self.month).zfill(2) + "." + str(
             self.year)
 
     def __eq__(self, other):
