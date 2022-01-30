@@ -331,7 +331,7 @@ def init_app():
         return response
 
     def _get_food_response(args, default_amount, food_type):
-        q = args.get("q", default=default_amount, type=int)
+        q = args.get("q", default=default_amount, type=float)
 
         if food_type == Tanks.WATER:
             food = "water"

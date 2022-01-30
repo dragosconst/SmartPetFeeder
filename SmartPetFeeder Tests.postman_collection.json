@@ -1,0 +1,1113 @@
+{
+	"info": {
+		"_postman_id": "cf53aa9c-e4c6-467d-94b7-8549ec06cfd2",
+		"name": "SmartPetFeeder Tests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Set Heating Temperature",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Temperature has been successfully set\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"    pm.expect(pm.response.text()).to.include(pm.request.headers.get(\"heating_temperature\"));\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.set(\"normalTemp\", _.random(10, 20, true))\r",
+							"pm.environment.set(\"highTemp\", _.random(200, 400, true))\r",
+							"pm.environment.set(\"lowTemp\", _.random(-20, 5, true))\r",
+							"pm.environment.set(\"randomTemp\", _.random(1, 3))\r",
+							"if (pm.environment.get(\"randomTemp\") == 1)\r",
+							"    pm.environment.set(\"randomTemp\", pm.environment.get(\"normalTemp\"));\r",
+							"else if(pm.environment.get(\"randomTemp\") == 2)\r",
+							"    pm.environment.set(\"randomTemp\", pm.environment.get(\"highTemp\"));\r",
+							"else\r",
+							"    pm.environment.set(\"randomTemp\", pm.environment.get(\"lowTemp\"));\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"description": "(Required) ",
+						"key": "heating_temperature",
+						"value": "{{randomTemp}}"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/set/heating_temperature/",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"set",
+						"heating_temperature",
+						""
+					]
+				},
+				"description": "Set the heating temperature"
+			},
+			"response": [
+				{
+					"name": "Succesfully set the heating temperature",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"description": "(Required) ",
+								"key": "heating_temperature",
+								"value": "-2992276.9452825934"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/set/heating_temperature/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"set",
+								"heating_temperature",
+								""
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "text",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "text/plain; charset=utf-8"
+						}
+					],
+					"cookie": [],
+					"body": ""
+				},
+				{
+					"name": "Invalid value",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"description": "(Required) ",
+								"key": "heating_temperature",
+								"value": "-2992276.9452825934"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/set/heating_temperature/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"set",
+								"heating_temperature",
+								""
+							]
+						}
+					},
+					"status": "Not Acceptable",
+					"code": 406,
+					"_postman_previewlanguage": "text",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "text/plain; charset=utf-8"
+						}
+					],
+					"cookie": [],
+					"body": ""
+				}
+			]
+		},
+		{
+			"name": "Get Heating Temperature",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Verify temperature\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"    pm.response.to.have.header(\"heating_temperature\");\r",
+							"    let temp = \"\" + pm.environment.get(\"randomTemp\"); // convert temperature to string\r",
+							"    pm.expect(pm.response.headers.get(\"heating_temperature\")).to.eql(temp);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/get/heating_temperature/",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"get",
+						"heating_temperature",
+						""
+					]
+				},
+				"description": "Get the current heating temperature"
+			},
+			"response": [
+				{
+					"name": "Succesfully retrieved the heating temperature",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/get/heating_temperature/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"get",
+								"heating_temperature",
+								""
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "text",
+					"header": [
+						{
+							"key": "heating_temperature",
+							"value": "-2992276.9452825934",
+							"description": ""
+						},
+						{
+							"key": "Content-Type",
+							"value": "text/plain"
+						}
+					],
+					"cookie": [],
+					"body": ""
+				}
+			]
+		},
+		{
+			"name": "Set Inactivity Period",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.set(\"normalPeriod\", _.random(240, 360, true))\r",
+							"pm.environment.set(\"highPeriod\", _.random(600, 2000, true))\r",
+							"pm.environment.set(\"lowPeriod\", _.random(0, 30, true))\r",
+							"pm.environment.set(\"randomPeriod\", _.random(1, 3))\r",
+							"if (pm.environment.get(\"randomPeriod\") == 1)\r",
+							"    pm.environment.set(\"randomPeriod\", pm.environment.get(\"normalPeriod\"));\r",
+							"else if(pm.environment.get(\"randomPeriod\") == 2)\r",
+							"    pm.environment.set(\"randomPeriod\", pm.environment.get(\"highPeriod\"));\r",
+							"else\r",
+							"    pm.environment.set(\"randomPeriod\", pm.environment.get(\"lowPeriod\"));"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Inactivity period has been successfully set\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"    pm.expect(pm.response.text()).to.include(pm.request.headers.get(\"inactivity_period\"));\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"description": "(Required) ",
+						"key": "inactivity_period",
+						"value": "{{randomPeriod}}"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/set/inactivity_period/",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"set",
+						"inactivity_period",
+						""
+					]
+				},
+				"description": "Set the inactivity period after which an alert is issued"
+			},
+			"response": [
+				{
+					"name": "Succesfully set the inactivity period",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"description": "(Required) ",
+								"key": "inactivity_period",
+								"value": "-2992276.9452825934"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/set/inactivity_period/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"set",
+								"inactivity_period",
+								""
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "text",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "text/plain; charset=utf-8"
+						}
+					],
+					"cookie": [],
+					"body": ""
+				},
+				{
+					"name": "Invalid value",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"description": "(Required) ",
+								"key": "inactivity_period",
+								"value": "-2992276.9452825934"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/set/inactivity_period/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"set",
+								"inactivity_period",
+								""
+							]
+						}
+					},
+					"status": "Not Acceptable",
+					"code": 406,
+					"_postman_previewlanguage": "text",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "text/plain; charset=utf-8"
+						}
+					],
+					"cookie": [],
+					"body": ""
+				}
+			]
+		},
+		{
+			"name": "Get Inactivity Period",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Verify inactivity period\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"    pm.response.to.have.header(\"inactivity_period\");\r",
+							"    let period = \"\" + pm.environment.get(\"randomPeriod\"); // convert period to string\r",
+							"    pm.expect(pm.response.headers.get(\"inactivity_period\")).to.eql(period);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/get/inactivity_period/",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"get",
+						"inactivity_period",
+						""
+					]
+				},
+				"description": "Get the inactivity period after which an alert is issued"
+			},
+			"response": [
+				{
+					"name": "Succesfully retrieved the inactivity period",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/get/inactivity_period/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"get",
+								"inactivity_period",
+								""
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "text",
+					"header": [
+						{
+							"key": "inactivity_period",
+							"value": "-2992276.9452825934",
+							"description": ""
+						},
+						{
+							"key": "Content-Type",
+							"value": "text/plain"
+						}
+					],
+					"cookie": [],
+					"body": ""
+				}
+			]
+		},
+		{
+			"name": "Set Feeding Limit",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.set(\"normalLimit\", _.random(100, 200, true))\r",
+							"pm.environment.set(\"highLimit\", _.random(1000, 5000, true))\r",
+							"pm.environment.set(\"lowLimit\", _.random(0, 10, true))\r",
+							"pm.environment.set(\"randomLimit\", _.random(1, 3))\r",
+							"if (pm.environment.get(\"randomLimit\") == 1)\r",
+							"    pm.environment.set(\"randomLimit\", pm.environment.get(\"normalLimit\"));\r",
+							"else if(pm.environment.get(\"randomLimit\") == 2)\r",
+							"    pm.environment.set(\"randomLimit\", pm.environment.get(\"highLimit\"));\r",
+							"else\r",
+							"    pm.environment.set(\"randomLimit\", pm.environment.get(\"lowLimit\"));"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Feeding limit has been successfully set\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"    pm.expect(pm.response.text()).to.include(pm.request.headers.get(\"feeding_limit\"));\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"description": "(Required) ",
+						"key": "feeding_limit",
+						"value": "{{randomLimit}}"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/set/feeding_limit/",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"set",
+						"feeding_limit",
+						""
+					]
+				},
+				"description": "Set the feeding limit for the pet"
+			},
+			"response": [
+				{
+					"name": "Succesfully set the feeding limit",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"description": "(Required) ",
+								"key": "feeding_limit",
+								"value": "-2992276.9452825934"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/set/feeding_limit/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"set",
+								"feeding_limit",
+								""
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "text",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "text/plain; charset=utf-8"
+						}
+					],
+					"cookie": [],
+					"body": ""
+				},
+				{
+					"name": "Invalid value",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"description": "(Required) ",
+								"key": "feeding_limit",
+								"value": "-2992276.9452825934"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/set/feeding_limit/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"set",
+								"feeding_limit",
+								""
+							]
+						}
+					},
+					"status": "Not Acceptable",
+					"code": 406,
+					"_postman_previewlanguage": "text",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "text/plain; charset=utf-8"
+						}
+					],
+					"cookie": [],
+					"body": ""
+				}
+			]
+		},
+		{
+			"name": "Get Feeding Limit",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Verify feeding_limit\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"    pm.response.to.have.header(\"feeding_limit\");\r",
+							"    let limit = \"\" + pm.environment.get(\"randomLimit\"); // convert limit to string\r",
+							"    pm.expect(pm.response.headers.get(\"feeding_limit\")).to.eql(limit);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/get/feeding_limit/",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"get",
+						"feeding_limit",
+						""
+					]
+				},
+				"description": "Get the current feeding limit"
+			},
+			"response": [
+				{
+					"name": "Succesfully retrieved the feeding limit",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/get/feeding_limit/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"get",
+								"feeding_limit",
+								""
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "text",
+					"header": [
+						{
+							"key": "feeding_limit",
+							"value": "-2992276.9452825934",
+							"description": ""
+						},
+						{
+							"key": "Content-Type",
+							"value": "text/plain"
+						}
+					],
+					"cookie": [],
+					"body": ""
+				}
+			]
+		},
+		{
+			"name": "Get Tanks Status",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Get tanks status\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"    pm.response.to.have.header(\"tanks_status\");\r",
+							"    pm.environment.set(\"tanks\", pm.response.headers.get(\"tanks_status\"));\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/get/tanks_status/",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"get",
+						"tanks_status",
+						""
+					]
+				},
+				"description": "Get the current quantities of food left in each tank"
+			},
+			"response": [
+				{
+					"name": "Succesfully retrieved the quantities",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/get/tanks_status/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"get",
+								"tanks_status",
+								""
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "text",
+					"header": [
+						{
+							"key": "tanks_status",
+							"value": "70246888.92294213,-28076638.893390447",
+							"description": ""
+						},
+						{
+							"key": "Content-Type",
+							"value": "text/plain"
+						}
+					],
+					"cookie": [],
+					"body": ""
+				}
+			]
+		},
+		{
+			"name": "Give Water",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"let tanks = JSON.parse(pm.environment.get(\"tanks\"));\r",
+							"let water = tanks[0]\r",
+							"pm.environment.set(\"low\", _.random(0, water, true))\r",
+							"pm.environment.set(\"high\", _.random(water+1, water+100, true))\r",
+							"pm.environment.set(\"randomWater\", _.random(1, 3))\r",
+							"if (pm.environment.get(\"randomWater\") == 1)\r",
+							"    pm.environment.set(\"randomWater\", pm.environment.get(\"low\"));\r",
+							"else\r",
+							"    pm.environment.set(\"randomWater\", pm.environment.get(\"high\"));"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Water bowl fill\", function () {\r",
+							"    if (pm.environment.get(\"randomWater\") == pm.environment.get(\"low\")) {\r",
+							"        pm.response.to.have.status(200);\r",
+							"        pm.expect(pm.response.text()).to.include(\"Water bowl refilled\");\r",
+							"    } else {\r",
+							"        pm.response.to.have.status(406);\r",
+							"        pm.expect(pm.response.text()).to.include(\"Not enough\");\r",
+							"    }\r",
+							"        \r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/action/give_water/?q={{randomWater}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"action",
+						"give_water",
+						""
+					],
+					"query": [
+						{
+							"key": "q",
+							"value": "{{randomWater}}",
+							"description": "The amount of water (in mL)"
+						}
+					]
+				},
+				"description": "Fill the water bowl with a specified quantity"
+			},
+			"response": [
+				{
+					"name": "Succesfully filled the water boWl",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/action/give_water/?q=-2992276.9452825934",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"action",
+								"give_water",
+								""
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "-2992276.9452825934"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "text",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "text/plain; charset=utf-8"
+						}
+					],
+					"cookie": [],
+					"body": ""
+				},
+				{
+					"name": "Not enough water left in the tank",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/action/give_water/?q=-2992276.9452825934",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"action",
+								"give_water",
+								""
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "-2992276.9452825934"
+								}
+							]
+						}
+					},
+					"status": "Not Acceptable",
+					"code": 406,
+					"_postman_previewlanguage": "text",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "text/plain; charset=utf-8"
+						}
+					],
+					"cookie": [],
+					"body": ""
+				}
+			]
+		},
+		{
+			"name": "Give Wet Food",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"let tanks = JSON.parse(pm.environment.get(\"tanks\"));\r",
+							"let wet_food = tanks[1]\r",
+							"pm.environment.set(\"low\", _.random(0, wet_food, true))\r",
+							"pm.environment.set(\"high\", _.random(wet_food+1, wet_food+100, true))\r",
+							"pm.environment.set(\"randomWetFood\", _.random(1, 3))\r",
+							"if (pm.environment.get(\"randomWetFood\") == 1)\r",
+							"    pm.environment.set(\"randomWetFood\", pm.environment.get(\"low\"));\r",
+							"else\r",
+							"    pm.environment.set(\"randomWetFood\", pm.environment.get(\"high\"));"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Wet food bowl fill\", function () {\r",
+							"    if (pm.environment.get(\"randomWetFood\") == pm.environment.get(\"low\")) {\r",
+							"        pm.response.to.have.status(200);\r",
+							"        pm.expect(pm.response.text()).to.include(\"Wet food bowl refilled\");\r",
+							"    } else {\r",
+							"        pm.response.to.have.status(406);\r",
+							"        pm.expect(pm.response.text()).to.include(\"Not enough\");\r",
+							"    }\r",
+							"        \r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/action/give_wet_food/?q={{randomWetFood}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"action",
+						"give_wet_food",
+						""
+					],
+					"query": [
+						{
+							"key": "q",
+							"value": "{{randomWetFood}}",
+							"description": "The amount of water (in mL)"
+						}
+					]
+				},
+				"description": "Fill the water bowl with a specified quantity"
+			},
+			"response": [
+				{
+					"name": "Succesfully filled the water boWl",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/action/give_water/?q=-2992276.9452825934",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"action",
+								"give_water",
+								""
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "-2992276.9452825934"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "text",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "text/plain; charset=utf-8"
+						}
+					],
+					"cookie": [],
+					"body": ""
+				},
+				{
+					"name": "Not enough water left in the tank",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/action/give_water/?q=-2992276.9452825934",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"action",
+								"give_water",
+								""
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "-2992276.9452825934"
+								}
+							]
+						}
+					},
+					"status": "Not Acceptable",
+					"code": 406,
+					"_postman_previewlanguage": "text",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "text/plain; charset=utf-8"
+						}
+					],
+					"cookie": [],
+					"body": ""
+				}
+			]
+		},
+		{
+			"name": "Give Dry Food",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"let tanks = JSON.parse(pm.environment.get(\"tanks\"));\r",
+							"let dry_food = tanks[1]\r",
+							"pm.environment.set(\"low\", _.random(0, dry_food, true))\r",
+							"pm.environment.set(\"high\", _.random(dry_food+1, dry_food+100, true))\r",
+							"pm.environment.set(\"randomDryFood\", _.random(1, 3))\r",
+							"if (pm.environment.get(\"randomDryFood\") == 1)\r",
+							"    pm.environment.set(\"randomDryFood\", pm.environment.get(\"low\"));\r",
+							"else\r",
+							"    pm.environment.set(\"randomDryFood\", pm.environment.get(\"high\"));"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Dry food bowl fill\", function () {\r",
+							"    if (pm.environment.get(\"randomDryFood\") == pm.environment.get(\"low\")) {\r",
+							"        pm.response.to.have.status(200);\r",
+							"        pm.expect(pm.response.text()).to.include(\"Dry food bowl refilled\");\r",
+							"    } else {\r",
+							"        pm.response.to.have.status(406);\r",
+							"        pm.expect(pm.response.text()).to.include(\"Not enough\");\r",
+							"    }\r",
+							"        \r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/action/give_dry_food/?q={{randomDryFood}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"action",
+						"give_dry_food",
+						""
+					],
+					"query": [
+						{
+							"key": "q",
+							"value": "{{randomDryFood}}",
+							"description": "The amount of water (in mL)"
+						}
+					]
+				},
+				"description": "Fill the water bowl with a specified quantity"
+			},
+			"response": [
+				{
+					"name": "Succesfully filled the water boWl",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/action/give_water/?q=-2992276.9452825934",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"action",
+								"give_water",
+								""
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "-2992276.9452825934"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "text",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "text/plain; charset=utf-8"
+						}
+					],
+					"cookie": [],
+					"body": ""
+				},
+				{
+					"name": "Not enough water left in the tank",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/action/give_water/?q=-2992276.9452825934",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"action",
+								"give_water",
+								""
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "-2992276.9452825934"
+								}
+							]
+						}
+					},
+					"status": "Not Acceptable",
+					"code": 406,
+					"_postman_previewlanguage": "text",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "text/plain; charset=utf-8"
+						}
+					],
+					"cookie": [],
+					"body": ""
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://[::1]:5000/",
+			"type": "string"
+		}
+	]
+}
