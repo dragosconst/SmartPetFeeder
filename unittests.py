@@ -69,7 +69,7 @@ class PetFeederTests(unittest.TestCase):
     def test_give_wet_food(self):
         initial_tank_level = app.petFeeder.tanks[Tanks.WET_FOOD]
         _ = self.app.get('/action/give_wet_food/')
-        self.assertTrue(app.petFeeder.tanks[Tanks.WET_FOOD] + (Tanks.WET_FOOD_DEFAULT if initial_tank_level >= Tanks.WET_FOOD_DEFAULT \
+        self.assertTrue(app.petFeeder.tanks[Tanks.WET_FOOD] + (Tanks.WET_FOOD_DEFAULT_PORTION if initial_tank_level >= Tanks.WET_FOOD_DEFAULT_PORTION \
                                                                else 0)  == initial_tank_level)
 
     def test_give_dry_food(self):

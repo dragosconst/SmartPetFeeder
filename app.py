@@ -71,7 +71,8 @@ def init_app():
         SECRET_KEY='dev',
     )
     
-    petFeeder = PetFeederClass(feeding_hours = [(10, 00)], feeding_limit = 100, inactivity_period = 450, heating_temperature = 15, tanks = [200, 500, 400], pet = PetTypes.DOG)
+    petFeeder = PetFeederClass(feeding_hours = [(10, 00)], feeding_limit = 100, inactivity_period = 450,
+                               heating_temperature = 15, tanks = [200, 500, 400], pet = PetTypes.DOG)
 
     db.init_app(app)
     with app.app_context():
@@ -169,7 +170,7 @@ def init_app():
 
     @app.route("/set/feeding_hours/", methods=['POST'])
     def set_feeding_hours():
-        re_moment = r'(\d?\d):(\d?\d)'
+        re_moment = r'^(\d?\d):(\d?\d)$'
         try:
             values = request.headers["feeding_hours"] # [11:30, 12:45, 19:20, 13:22]
             oldValues = petFeeder.feeding_hours
@@ -284,7 +285,7 @@ def init_app():
     @app.route("/action/give_water/", methods=['GET'])
     def give_water(): 
         args = request.args
-        response = _get_food_response(args, Tanks.WATER_DEFAULT, Tanks.WATER)
+        response = _get_food_response(args, Tanks.WATER_DEFAULT_PORTION, Tanks.WATER)
 
         _insert_tank_states("simulation" in request.headers)
         return response
@@ -293,7 +294,7 @@ def init_app():
     def give_wet_food():
         args = request.args
 
-        response = _get_food_response(args, Tanks.WET_FOOD_DEFAULT, Tanks.WET_FOOD)
+        response = _get_food_response(args, Tanks.WET_FOOD_DEFAULT_PORTION, Tanks.WET_FOOD)
         _insert_tank_states("simulation" in request.headers)
         return response
 
@@ -301,13 +302,13 @@ def init_app():
     def give_dry_food():
         args = request.args
 
-        response = _get_food_response(args, Tanks.DRY_FOOD_DEFAULT, Tanks.DRY_FOOD)
+        response = _get_food_response(args, Tanks.DRY_FOOD_DEFAULT_PORTION, Tanks.DRY_FOOD)
         _insert_tank_states("simulation" in request.headers)
         return response
 
     @app.route("/action/fill_tanks/", methods=['GET'])
     def fill_tanks():
-        petFeeder.tanks = [200, 500, 400]
+        petFeeder.tanks = [Tanks.WATER_REFILL, Tanks.WET_FOOD_REFILL, Tanks.DRY_FOOD_REFILL]
         response = Response("All tanks refilled!")
         publish(mqtt, '/SmartPetFeeder/tanks_status', str(petFeeder.tanks))
         return response 
@@ -327,6 +328,7 @@ if __name__ == '__main__':
     utils.simMutex = Lock()
 
     if choice.upper() == 'Y':
+        # wait for server response before starting the simulation
         thread_waiting_for_response = Thread(target = wait_for_response)
         thread_waiting_for_response.start()
 
