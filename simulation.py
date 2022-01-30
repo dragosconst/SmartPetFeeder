@@ -144,7 +144,8 @@ def simulation(data_file, petFeeder, mqtt, thread_waiting):
 
         final = to_print1 + to_print2
 
-        # print(final)
+        if mqtt is None:
+            print(final)
 
         time.sleep(1)
     print("Finished simulation")

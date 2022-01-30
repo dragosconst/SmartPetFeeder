@@ -23,7 +23,6 @@ app = None
 petFeeder = None
 socketio = None
 mqtt = None
-mqtt_thread = None
 
 def run_socketio_app():
     global socketio
@@ -32,7 +31,7 @@ def run_socketio_app():
 
 
 def init_mqtt():
-    global mqtt, mqtt_thread
+    global mqtt
     
     # Setup connection to mqtt broker
     app.config['MQTT_BROKER_URL'] = 'localhost'  # Mosquitto Broker
