@@ -108,15 +108,18 @@ def simulation(data_file, petFeeder, mqtt, thread_waiting):
                 to_print2 = "Pet detected"
                 publish(mqtt, '/SmartPetFeeder/pet_detection_warning', to_print2 + ";" + currentTime.show())
             elif next_data_sensor == Sensors.water_mass:
-                petFeeder.tanks[Tanks.WATER] = next_data_value
+                if mqtt is None:
+                    petFeeder.tanks[Tanks.WATER] = next_data_value
                 to_print2 = f"Water mass has changed to {next_data_value} g"
                 publish(mqtt, '/SmartPetFeeder/water_mass', str(next_data_value) + ";" + currentTime.show())
             elif next_data_sensor == Sensors.wet_food_mass:
-                petFeeder.tanks[Tanks.WET_FOOD] = next_data_value
+                if mqtt is None:
+                    petFeeder.tanks[Tanks.WET_FOOD] = next_data_value
                 to_print2 = f"Wet food mass has changed to {next_data_value} g"
                 publish(mqtt, '/SmartPetFeeder/wet_food_mass', str(next_data_value) + ";" + currentTime.show())
             elif next_data_sensor == Sensors.dry_food_mass:
-                petFeeder.tanks[Tanks.DRY_FOOD] = next_data_value
+                if mqtt is None:
+                    petFeeder.tanks[Tanks.DRY_FOOD] = next_data_value
                 to_print2 = f"Dry food mass has changed to {next_data_value} g"
                 publish(mqtt, '/SmartPetFeeder/dry_food_mass', str(next_data_value) + ";" + currentTime.show())
             elif next_data_sensor == Sensors.movement:
