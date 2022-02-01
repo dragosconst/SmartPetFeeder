@@ -93,6 +93,21 @@ def init_mqtt():
 
                 msg = msg[0]
                 print(timestamp + ": " + msg)
+
+                with app.app_context():
+                    database = db.get_db()
+                    if msg[0] != 'W': # ignore warning
+                        database.execute(
+                            'INSERT INTO PET_DETECTIONS (detection_time)'
+                            ' VALUES (CURRENT_TIMESTAMP)'
+                        )
+                    else:
+                        database.execute(
+                            'INSERT INTO NOTIFICATIONS (message_text)'
+                            ' VALUES (?)',
+                            (msg,)
+                        )
+                    database.commit()
             elif data['topic'] == '/SmartPetFeeder/water_mass':
                 new_water_mass = data['payload'].split(';')
                 timestamp = str(datetime.datetime.now())
@@ -131,6 +146,14 @@ def init_mqtt():
                 msg = msg[0]
 
                 print(timestamp + ": " + msg)
+                with app.app_context():
+                        database = db.get_db()
+                        database.execute(
+                            'INSERT INTO NOTIFICATIONS (message_text)'
+                            ' VALUES (?)',
+                            (msg,)
+                        )
+                        database.commit()
 
 
         print("Connected to MQTT broker!")
@@ -200,12 +223,22 @@ def init_app():
         print(petFeeder)
     
 
+    def log_request(method, endpoint, headers):
+        database = db.get_db()
+        database.execute(
+            'INSERT INTO HTTP_REQUESTS (method, ep, headers)'
+            ' VALUES (?, ?, ?)',
+            (method, endpoint, str(headers))
+        )
+        database.commit()
+
     @app.route("/")
     def hello_world():
         return "<p>SmartPetFeeder</p>"
 
     @app.route("/set/heating_temperature/", methods=['POST'])
     def set_heating_temperature():
+        log_request('POST', '/set/heating_temperature/', request.headers)
         try:
             value = float(request.headers["heating_temperature"])
             oldTemp = petFeeder.heating_temperature
@@ -225,6 +258,7 @@ def init_app():
 
     @app.route("/set/feeding_limit/", methods=['POST'])
     def set_feeding_limit():
+        log_request('POST', '/set/feeding_limit/', request.headers)
         try:
             value = float(request.headers["feeding_limit"])
             if value < 0:
@@ -246,6 +280,7 @@ def init_app():
 
     @app.route("/set/feeding_hours/", methods=['POST'])
     def set_feeding_hours():
+        log_request('POST', '/set/feeding_hours/', request.headers)
         re_moment = r'(\d?\d):(\d?\d)'
         try:
             values = request.headers["feeding_hours"] # [11:30, 12:45, 19:20, 13:22]
@@ -276,6 +311,7 @@ def init_app():
 
     @app.route("/set/inactivity_period/", methods=['POST'])
     def set_inactivity_period():
+        log_request('POST', '/set/inactivity_period/', request.headers)
         try:
             value = float(request.headers["inactivity_period"])
             if value < 0:
@@ -297,6 +333,7 @@ def init_app():
 
     @app.route("/get/heating_temperature/", methods=['GET'])
     def get_heating_temperature():
+        log_request('GET', '/get/heating_temperature/', request.headers)
         value = petFeeder.heating_temperature
         response = Response(f"The heating temperature is: {value} °C.")
         response.headers['heating_temperature'] = value
@@ -304,6 +341,7 @@ def init_app():
 
     @app.route("/get/feeding_limit/", methods=['GET'])
     def get_feeding_limit():
+        log_request('GET', '/get/feeding_limit/', request.headers)
         value = petFeeder.feeding_limit
         response = Response(f"The feeding limit is : {value} g.")
         response.headers['feeding_limit'] = value
@@ -311,6 +349,7 @@ def init_app():
 
     @app.route("/get/feeding_hours/", methods=['GET'])
     def get_feeding_hours():
+        log_request('GET', '/get/feeding_hours/', request.headers)
         value = petFeeder.feeding_hours
         response = Response(f"The feeding hours are: {value}.")
         response.headers['feeding_hours'] = value
@@ -318,6 +357,7 @@ def init_app():
 
     @app.route("/get/inactivity_period/", methods=['GET'])
     def get_inactivity_period():
+        log_request('GET', '/get/inactivity_period/', request.headers)
         value = petFeeder.inactivity_period
         response = Response(f"The inactivity period is: {value} minutes.")
         response.headers['inactivity_period'] = value
@@ -325,6 +365,7 @@ def init_app():
 
     @app.route("/get/tanks_status/", methods=['GET'])
     def get_tanks_status():
+        log_request('GET', '/get/tanks_status/', request.headers)
         value = petFeeder.tanks
         response = Response(f"The remaining quantities of food in the tanks are: {value}.")
         response.headers['tanks_status'] = value
@@ -340,12 +381,12 @@ def init_app():
         else:
             food = "dry food"
         if q > petFeeder.tanks[food_type]:
-            return Response("Not enough " + food + " left in the tank!", status=406)
+            return Response("Not enough " + food + " left in the tank!", status=406), q
 
         petFeeder.tanks[food_type] -= q
-        return Response(food.capitalize() + " bowl refilled!")
+        return Response(food.capitalize() + " bowl refilled!"), q
 
-    def _insert_tank_states(simulation):
+    def _update_tank_states(simulation, food_type, quantity):
         if simulation is False:
             database = db.get_db()
             database.execute(
@@ -353,35 +394,47 @@ def init_app():
                 ' VALUES (?)',
                 (str(petFeeder.tanks),)
             )
+            database.execute(
+                'INSERT INTO DISPENSING_TIMES (food_type, quantity)'
+                ' VALUES (?, ?)',
+                (food_type, quantity)
+            )
             database.commit()
         publish(mqtt, '/SmartPetFeeder/tanks_status', str(petFeeder.tanks))
 
     @app.route("/action/give_water/", methods=['GET'])
-    def give_water(): 
+    def give_water():
+        log_request('GET', '/action/give_water/', request.headers) 
         args = request.args
-        response = _get_food_response(args, Tanks.WATER_DEFAULT, Tanks.WATER)
+        response, quantity = _get_food_response(args, Tanks.WATER_DEFAULT, Tanks.WATER)
 
-        _insert_tank_states("simulation" in request.headers)
+        if response.status_code == 200:
+            _update_tank_states("simulation" in request.headers, Tanks.WATER, quantity)
         return response
 
     @app.route("/action/give_wet_food/", methods=['GET'])
     def give_wet_food():
+        log_request('GET', '/action/give_wet_food/', request.headers) 
         args = request.args
 
-        response = _get_food_response(args, Tanks.WET_FOOD_DEFAULT, Tanks.WET_FOOD)
-        _insert_tank_states("simulation" in request.headers)
+        response, quantity = _get_food_response(args, Tanks.WET_FOOD_DEFAULT, Tanks.WET_FOOD)
+        if response.status_code == 200:
+            _update_tank_states("simulation" in request.headers, Tanks.WET_FOOD, quantity)
         return response
 
     @app.route("/action/give_dry_food/", methods=['GET'])
     def give_dry_food():
+        log_request('GET', '/action/give_dry_food/', request.headers) 
         args = request.args
 
-        response = _get_food_response(args, Tanks.DRY_FOOD_DEFAULT, Tanks.DRY_FOOD)
-        _insert_tank_states("simulation" in request.headers)
+        response, quantity = _get_food_response(args, Tanks.DRY_FOOD_DEFAULT, Tanks.DRY_FOOD)
+        if response.status_code == 200:
+            _update_tank_states("simulation" in request.headers, Tanks.DRY_FOOD, quantity)
         return response
 
     @app.route("/action/fill_tanks/", methods=['GET'])
     def fill_tanks():
+        log_request('GET', '/action/fill_tanks/', request.headers) 
         petFeeder.tanks = [200, 500, 400]
         response = Response("All tanks refilled!")
         publish(mqtt, '/SmartPetFeeder/tanks_status', str(petFeeder.tanks))
