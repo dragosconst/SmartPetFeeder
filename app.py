@@ -242,6 +242,9 @@ def init_app():
         log_request('POST', '/set/heating_temperature/', request.headers)
         try:
             value = float(request.headers["heating_temperature"])
+            if value > PetFeederClass.MAX_HEATING_TEMPERATURE or \
+               value < PetFeederClass.MIN_HEATING_TEMPERATURE:
+                raise ValueError
             oldTemp = petFeeder.heating_temperature
             petFeeder.heating_temperature = value
             msg = f"Heating temperature changed from {oldTemp} °C to {value} °C!"
@@ -262,7 +265,8 @@ def init_app():
         log_request('POST', '/set/feeding_limit/', request.headers)
         try:
             value = float(request.headers["feeding_limit"])
-            if value < 0:
+            if value > PetFeederClass.MAX_FEEDING_LIMIT or \
+               value < PetFeederClass.MIN_FEEDING_LIMIT:
                 raise ValueError
             oldValue = petFeeder.feeding_limit
             petFeeder.feeding_limit = value
@@ -315,7 +319,8 @@ def init_app():
         log_request('POST', '/set/inactivity_period/', request.headers)
         try:
             value = float(request.headers["inactivity_period"])
-            if value < 0:
+            if value > PetFeederClass.MAX_INACTIVITY_PERIOD or \
+               value < PetFeederClass.MIN_INACTIVITY_PERIOD:
                 raise ValueError
             oldValue = petFeeder.inactivity_period
             petFeeder.inactivity_period = value
@@ -409,7 +414,7 @@ def init_app():
     def give_water():
         log_request('GET', '/action/give_water/', request.headers) 
         args = request.args
-        response, quantity = _get_food_response(args, Tanks.WATER_DEFAULT, Tanks.WATER)
+        response, quantity = _get_food_response(args, Tanks.WATER_DEFAULT_PORTION, Tanks.WATER)
 
         if response.status_code == 200:
             _update_tank_states("simulation" in request.headers, Tanks.WATER, quantity)
@@ -420,7 +425,7 @@ def init_app():
         log_request('GET', '/action/give_wet_food/', request.headers) 
         args = request.args
 
-        response, quantity = _get_food_response(args, Tanks.WET_FOOD_DEFAULT, Tanks.WET_FOOD)
+        response, quantity = _get_food_response(args, Tanks.WET_FOOD_DEFAULT_PORTION, Tanks.WET_FOOD)
         if response.status_code == 200:
             _update_tank_states("simulation" in request.headers, Tanks.WET_FOOD, quantity)
         return response
@@ -430,7 +435,7 @@ def init_app():
         log_request('GET', '/action/give_dry_food/', request.headers) 
         args = request.args
 
-        response, quantity = _get_food_response(args, Tanks.DRY_FOOD_DEFAULT, Tanks.DRY_FOOD)
+        response, quantity = _get_food_response(args, Tanks.DRY_FOOD_DEFAULT_PORTION, Tanks.DRY_FOOD)
         if response.status_code == 200:
             _update_tank_states("simulation" in request.headers, Tanks.DRY_FOOD, quantity)
         return response

@@ -28,7 +28,7 @@ paths:
                 format: float
   /get/feeding_limit/:
     get:
-      operationId: get_feeding_temperature
+      operationId: get_feeding_limit
       description: Get the current feeding limit
       tags:
         - get

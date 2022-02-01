@@ -12,9 +12,19 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Temperature has been successfully set\", function () {\r",
-							"    pm.response.to.have.status(200);\r",
-							"    pm.expect(pm.response.text()).to.include(pm.request.headers.get(\"heating_temperature\"));\r",
+							"pm.test(\"Try setting the temperature\", function () {\r",
+							"    if (pm.environment.get(\"randomTemp\") == pm.environment.get(\"lowTemp\") ||\r",
+							"        pm.environment.get(\"randomTemp\") == pm.environment.get(\"highTemp\")) {\r",
+							"\r",
+							"        pm.response.to.have.status(406);\r",
+							"        pm.expect(pm.response.text()).to.include(\"Invalid\");\r",
+							"        pm.environment.set(\"randomTemp\", pm.environment.get(\"normalTemp\"));\r",
+							"        pm.environment.set(\"no_prerequest\", true);\r",
+							"        postman.setNextRequest(\"Set Heating Temperature\");\r",
+							"    } else {\r",
+							"        pm.response.to.have.status(200);\r",
+							"        pm.expect(pm.response.text()).to.include(pm.request.headers.get(\"heating_temperature\"));\r",
+							"    }\r",
 							"});"
 						],
 						"type": "text/javascript"
@@ -24,16 +34,19 @@
 					"listen": "prerequest",
 					"script": {
 						"exec": [
-							"pm.environment.set(\"normalTemp\", _.random(10, 20, true))\r",
-							"pm.environment.set(\"highTemp\", _.random(200, 400, true))\r",
-							"pm.environment.set(\"lowTemp\", _.random(-20, 5, true))\r",
-							"pm.environment.set(\"randomTemp\", _.random(1, 3))\r",
-							"if (pm.environment.get(\"randomTemp\") == 1)\r",
-							"    pm.environment.set(\"randomTemp\", pm.environment.get(\"normalTemp\"));\r",
-							"else if(pm.environment.get(\"randomTemp\") == 2)\r",
-							"    pm.environment.set(\"randomTemp\", pm.environment.get(\"highTemp\"));\r",
-							"else\r",
-							"    pm.environment.set(\"randomTemp\", pm.environment.get(\"lowTemp\"));\r",
+							"if (pm.environment.get(\"no_prerequest\") == false) {\r",
+							"    pm.environment.set(\"normalTemp\", _.random(10, 20, true))\r",
+							"    pm.environment.set(\"highTemp\", _.random(200, 400, true))\r",
+							"    pm.environment.set(\"lowTemp\", _.random(-20, 5, true))\r",
+							"    pm.environment.set(\"randomTemp\", _.random(1, 3))\r",
+							"    if (pm.environment.get(\"randomTemp\") == 1)\r",
+							"        pm.environment.set(\"randomTemp\", pm.environment.get(\"normalTemp\"));\r",
+							"    else if(pm.environment.get(\"randomTemp\") == 2)\r",
+							"        pm.environment.set(\"randomTemp\", pm.environment.get(\"highTemp\"));\r",
+							"    else\r",
+							"        pm.environment.set(\"randomTemp\", pm.environment.get(\"lowTemp\"));\r",
+							"} \r",
+							"pm.environment.set(\"no_prerequest\", false);\r",
 							"\r",
 							""
 						],
@@ -214,16 +227,19 @@
 					"listen": "prerequest",
 					"script": {
 						"exec": [
-							"pm.environment.set(\"normalPeriod\", _.random(240, 360, true))\r",
-							"pm.environment.set(\"highPeriod\", _.random(600, 2000, true))\r",
-							"pm.environment.set(\"lowPeriod\", _.random(0, 30, true))\r",
-							"pm.environment.set(\"randomPeriod\", _.random(1, 3))\r",
-							"if (pm.environment.get(\"randomPeriod\") == 1)\r",
-							"    pm.environment.set(\"randomPeriod\", pm.environment.get(\"normalPeriod\"));\r",
-							"else if(pm.environment.get(\"randomPeriod\") == 2)\r",
-							"    pm.environment.set(\"randomPeriod\", pm.environment.get(\"highPeriod\"));\r",
-							"else\r",
-							"    pm.environment.set(\"randomPeriod\", pm.environment.get(\"lowPeriod\"));"
+							"if (pm.environment.get(\"no_prerequest\") == false) {\r",
+							"    pm.environment.set(\"normalPeriod\", _.random(240, 460, true))\r",
+							"    pm.environment.set(\"highPeriod\", _.random(721, 2000, true))\r",
+							"    pm.environment.set(\"lowPeriod\", _.random(0, 29, true))\r",
+							"    pm.environment.set(\"randomPeriod\", _.random(1, 3))\r",
+							"    if (pm.environment.get(\"randomPeriod\") == 1)\r",
+							"        pm.environment.set(\"randomPeriod\", pm.environment.get(\"normalPeriod\"));\r",
+							"    else if(pm.environment.get(\"randomPeriod\") == 2)\r",
+							"        pm.environment.set(\"randomPeriod\", pm.environment.get(\"highPeriod\"));\r",
+							"    else\r",
+							"        pm.environment.set(\"randomPeriod\", pm.environment.get(\"lowPeriod\"));\r",
+							"}\r",
+							"pm.environment.set(\"no_prerequest\", false);"
 						],
 						"type": "text/javascript"
 					}
@@ -232,9 +248,19 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Inactivity period has been successfully set\", function () {\r",
-							"    pm.response.to.have.status(200);\r",
-							"    pm.expect(pm.response.text()).to.include(pm.request.headers.get(\"inactivity_period\"));\r",
+							"pm.test(\"Try setting the inactivity period\", function () {\r",
+							"    if (pm.environment.get(\"randomPeriod\") == pm.environment.get(\"lowPeriod\") ||\r",
+							"        pm.environment.get(\"randomPeriod\") == pm.environment.get(\"highPeriod\")) {\r",
+							"\r",
+							"        pm.response.to.have.status(406);\r",
+							"        pm.expect(pm.response.text()).to.include(\"Invalid\");\r",
+							"        pm.environment.set(\"randomPeriod\", pm.environment.get(\"normalPeriod\"));\r",
+							"        pm.environment.set(\"no_prerequest\", true);\r",
+							"        postman.setNextRequest(\"Set Inactivity Period\");\r",
+							"    } else {\r",
+							"        pm.response.to.have.status(200);\r",
+							"        pm.expect(pm.response.text()).to.include(pm.request.headers.get(\"inactivity_period\"));\r",
+							"    }\r",
 							"});"
 						],
 						"type": "text/javascript"
@@ -414,16 +440,20 @@
 					"listen": "prerequest",
 					"script": {
 						"exec": [
-							"pm.environment.set(\"normalLimit\", _.random(100, 200, true))\r",
-							"pm.environment.set(\"highLimit\", _.random(1000, 5000, true))\r",
-							"pm.environment.set(\"lowLimit\", _.random(0, 10, true))\r",
-							"pm.environment.set(\"randomLimit\", _.random(1, 3))\r",
-							"if (pm.environment.get(\"randomLimit\") == 1)\r",
-							"    pm.environment.set(\"randomLimit\", pm.environment.get(\"normalLimit\"));\r",
-							"else if(pm.environment.get(\"randomLimit\") == 2)\r",
-							"    pm.environment.set(\"randomLimit\", pm.environment.get(\"highLimit\"));\r",
-							"else\r",
-							"    pm.environment.set(\"randomLimit\", pm.environment.get(\"lowLimit\"));"
+							"if (pm.environment.get(\"no_prerequest\") == false) {\r",
+							"    pm.environment.set(\"normalLimit\", _.random(100, 500, true))\r",
+							"    pm.environment.set(\"highLimit\", _.random(1001, 5000, true))\r",
+							"    pm.environment.set(\"lowLimit\", _.random(-20, 4, true))\r",
+							"    pm.environment.set(\"randomLimit\", _.random(1, 3))\r",
+							"    if (pm.environment.get(\"randomLimit\") == 1)\r",
+							"        pm.environment.set(\"randomLimit\", pm.environment.get(\"normalLimit\"));\r",
+							"    else if(pm.environment.get(\"randomLimit\") == 2)\r",
+							"        pm.environment.set(\"randomLimit\", pm.environment.get(\"highLimit\"));\r",
+							"    else\r",
+							"        pm.environment.set(\"randomLimit\", pm.environment.get(\"lowLimit\"));\r",
+							"}\r",
+							"pm.environment.set(\"no_prerequest\", false);\r",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -432,9 +462,19 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Feeding limit has been successfully set\", function () {\r",
-							"    pm.response.to.have.status(200);\r",
-							"    pm.expect(pm.response.text()).to.include(pm.request.headers.get(\"feeding_limit\"));\r",
+							"pm.test(\"Try setting the feeding limit\", function () {\r",
+							"    if (pm.environment.get(\"randomLimit\") == pm.environment.get(\"lowLimit\") ||\r",
+							"        pm.environment.get(\"randomLimit\") == pm.environment.get(\"highLimit\")) {\r",
+							"\r",
+							"        pm.response.to.have.status(406);\r",
+							"        pm.expect(pm.response.text()).to.include(\"Invalid\");\r",
+							"        pm.environment.set(\"randomLimit\", pm.environment.get(\"normalLimit\"));\r",
+							"        pm.environment.set(\"no_prerequest\", true);\r",
+							"        postman.setNextRequest(\"Set Feeding Limit\");\r",
+							"    } else {\r",
+							"        pm.response.to.have.status(200);\r",
+							"        pm.expect(pm.response.text()).to.include(pm.request.headers.get(\"feeding_limit\"));\r",
+							"    }\r",
 							"});"
 						],
 						"type": "text/javascript"
@@ -688,7 +728,7 @@
 							"let water = tanks[0]\r",
 							"pm.environment.set(\"low\", _.random(0, water, true))\r",
 							"pm.environment.set(\"high\", _.random(water+1, water+100, true))\r",
-							"pm.environment.set(\"randomWater\", _.random(1, 3))\r",
+							"pm.environment.set(\"randomWater\", _.random(1, 2))\r",
 							"if (pm.environment.get(\"randomWater\") == 1)\r",
 							"    pm.environment.set(\"randomWater\", pm.environment.get(\"low\"));\r",
 							"else\r",
@@ -821,6 +861,7 @@
 						"exec": [
 							"let tanks = JSON.parse(pm.environment.get(\"tanks\"));\r",
 							"let wet_food = tanks[1]\r",
+							"pm.environment.set(\"wetFoodTank\", wet_food);\r",
 							"pm.environment.set(\"low\", _.random(0, wet_food, true))\r",
 							"pm.environment.set(\"high\", _.random(wet_food+1, wet_food+100, true))\r",
 							"pm.environment.set(\"randomWetFood\", _.random(1, 3))\r",
@@ -837,7 +878,8 @@
 					"script": {
 						"exec": [
 							"pm.test(\"Wet food bowl fill\", function () {\r",
-							"    if (pm.environment.get(\"randomWetFood\") == pm.environment.get(\"low\")) {\r",
+							"    if (pm.environment.get(\"randomWetFood\") == pm.environment.get(\"low\") ||\r",
+							"        pm.environment.get(\"wetFoodTank\") >= pm.environment.get(\"randomLimit\")) {\r",
 							"        pm.response.to.have.status(200);\r",
 							"        pm.expect(pm.response.text()).to.include(\"Wet food bowl refilled\");\r",
 							"    } else {\r",
@@ -955,7 +997,7 @@
 					"script": {
 						"exec": [
 							"let tanks = JSON.parse(pm.environment.get(\"tanks\"));\r",
-							"let dry_food = tanks[1]\r",
+							"let dry_food = tanks[2]\r",
 							"pm.environment.set(\"low\", _.random(0, dry_food, true))\r",
 							"pm.environment.set(\"high\", _.random(dry_food+1, dry_food+100, true))\r",
 							"pm.environment.set(\"randomDryFood\", _.random(1, 3))\r",

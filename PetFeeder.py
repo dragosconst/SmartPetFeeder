@@ -22,6 +22,15 @@ class Tanks:
     DRY_FOOD_REFILL = 400
 
 class PetFeederClass:
+    MAX_HEATING_TEMPERATURE = 100
+    MIN_HEATING_TEMPERATURE = 10
+
+    MAX_INACTIVITY_PERIOD = 720 # 12 hours
+    MIN_INACTIVITY_PERIOD = 30
+
+    MAX_FEEDING_LIMIT = 1000
+    MIN_FEEDING_LIMIT = 5
+
     def __init__(self, feeding_hours, feeding_limit, inactivity_period, heating_temperature, tanks, pet):
         self.feeding_hours = feeding_hours
         self.feeding_limit = feeding_limit
