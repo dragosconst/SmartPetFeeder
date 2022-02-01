@@ -409,7 +409,7 @@ def init_app():
     def give_water():
         log_request('GET', '/action/give_water/', request.headers) 
         args = request.args
-        response, quantity = _get_food_response(args, Tanks.WATER_DEFAULT, Tanks.WATER)
+        response, quantity = _get_food_response(args, Tanks.WATER_DEFAULT_PORTION, Tanks.WATER)
 
         if response.status_code == 200:
             _update_tank_states("simulation" in request.headers, Tanks.WATER, quantity)
@@ -420,7 +420,7 @@ def init_app():
         log_request('GET', '/action/give_wet_food/', request.headers) 
         args = request.args
 
-        response, quantity = _get_food_response(args, Tanks.WET_FOOD_DEFAULT, Tanks.WET_FOOD)
+        response, quantity = _get_food_response(args, Tanks.WET_FOOD_DEFAULT_PORTION, Tanks.WET_FOOD)
         if response.status_code == 200:
             _update_tank_states("simulation" in request.headers, Tanks.WET_FOOD, quantity)
         return response
@@ -430,7 +430,7 @@ def init_app():
         log_request('GET', '/action/give_dry_food/', request.headers) 
         args = request.args
 
-        response, quantity = _get_food_response(args, Tanks.DRY_FOOD_DEFAULT, Tanks.DRY_FOOD)
+        response, quantity = _get_food_response(args, Tanks.DRY_FOOD_DEFAULT_PORTION, Tanks.DRY_FOOD)
         if response.status_code == 200:
             _update_tank_states("simulation" in request.headers, Tanks.DRY_FOOD, quantity)
         return response
