@@ -154,7 +154,8 @@ def init_mqtt():
                             (msg,)
                         )
                         database.commit()
-
+                publish(mqtt, '/SmartPetFeeder/ultrasound/', str(4 * 10 ** 5)) # send ultrasound when movement is detected with no collar detection
+                # could be a datapoint, since this is a frequency only cats and dogs can hear
 
         print("Connected to MQTT broker!")
 
