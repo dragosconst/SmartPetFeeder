@@ -80,7 +80,7 @@ channels:
         $ref: '#/components/messages/wet_food_temp'
   /SmartPetFeeder/pet_detection_warning:
     publish:
-      summary: Publish pet collar detections or an inactivity warnings.
+      summary: Publish pet collar detections or inactivity warnings.
       message:
         $ref: '#/components/messages/pet_detection_warning'
     subscribe:
