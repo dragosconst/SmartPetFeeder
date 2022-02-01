@@ -1,4 +1,3 @@
-from imp import reload
 import dearpygui.dearpygui as dpg
 from dearpygui.demo import show_demo
 import requests
@@ -6,92 +5,93 @@ import app
 from PetFeeder import PetFeederClass, PetTypes, Tanks
 import re
 
-objCopy = PetFeederClass(feeding_hours = [], feeding_limit = 0, inactivity_period = 0, heating_temperature = 0, tanks = [0, 0, 0], pet = PetTypes.DOG)
+petFeederCopy = PetFeederClass(feeding_hours = [], feeding_limit = 0, inactivity_period = 0, heating_temperature = 0, tanks = [0, 0, 0], pet = PetTypes.DOG)
 
 dpg.create_context()
 
-def getFeedingHours():
-    req = requests.get('http://[::1]:5000/get/feeding_hours/')
-    if req.status_code == 200:
-        values = req.headers["feeding_hours"]
-        values = values.replace("[", "")
-        values = values.replace("]", "")
-        values = values.replace("),", ");")
-        new = []
-        for moment in values.split(";"):
-            moment = moment.replace(" ", "")
-            moment = moment.replace("(", "")
-            moment = moment.replace(")", "")
-            
-            hour = int(moment.split(",")[0])
-            minute = int(moment.split(",")[1])
-            new.append((hour, minute))
-        objCopy.feeding_hours = new
-        print(type(new))
+#  this is not called anywhere, the same function is redefined later on in the code (i refactored the name)
+# def getFeedingHours():
+#     req = requests.get('http://[::1]:5000/get/feeding_hours/')
+#     if req.status_code == 200:
+#         values = req.headers["feeding_hours"]
+#         values = values.replace("[", "")
+#         values = values.replace("]", "")
+#         values = values.replace("),", ");")
+#         new = []
+#         for moment in values.split(";"):
+#             moment = moment.replace(" ", "")
+#             moment = moment.replace("(", "")
+#             moment = moment.replace(")", "")
+#
+#             hour = int(moment.split(",")[0])
+#             minute = int(moment.split(",")[1])
+#             new.append((hour, minute))
+#         objCopy.feeding_hours = new
+#         print(type(new))
 
-def getFeedingLimit():
+def get_feeding_limit():
     req = requests.get('http://[::1]:5000/get/feeding_limit/')
     if req.status_code == 200:
         value = float(req.headers["feeding_limit"])
-        objCopy.feeding_limit = value
+        petFeederCopy.feeding_limit = value
 
-def increaseFeedingLimit():
-    value = objCopy.feeding_limit
+def increase_feeding_limit():
+    value = petFeederCopy.feeding_limit
     value += 10
-    objCopy.feeding_limit = value
+    petFeederCopy.feeding_limit = value
     req = requests.post('http://[::1]:5000/set/feeding_limit/', headers = {"feeding_limit" : str(value)})
     dpg.set_value("feedingLimitText", str(value) + " g")
 
-def decreaseFeedingLimit():
-    value = objCopy.feeding_limit
+def decrease_feeding_limit():
+    value = petFeederCopy.feeding_limit
     if value > 10:
         value -= 10
-        objCopy.feeding_limit = value
+        petFeederCopy.feeding_limit = value
         req = requests.post('http://[::1]:5000/set/feeding_limit/', headers = {"feeding_limit" : str(value)})
         dpg.set_value("feedingLimitText", str(value) + " g")
 
 
-def getInactivityPeriod():
+def get_inactivity_period():
     req = requests.get('http://[::1]:5000/get/inactivity_period/')
     if req.status_code == 200:
         value = float(req.headers["inactivity_period"])
-        objCopy.inactivity_period = value
+        petFeederCopy.inactivity_period = value
 
-def increaseInactivityPeriod():
-    value = objCopy.inactivity_period
+def increase_inactivity_period():
+    value = petFeederCopy.inactivity_period
     value += 10
-    objCopy.inactivity_period = value
+    petFeederCopy.inactivity_period = value
     req = requests.post('http://[::1]:5000/set/inactivity_period/', headers = {"inactivity_period" : str(value)})
     dpg.set_value("inactivityPeriodText", str(value) + " minutes")
 
-def decreaseInactivityPeriod():
-    value = objCopy.inactivity_period
+def decrease_inactivity_period():
+    value = petFeederCopy.inactivity_period
     value -= 10
-    objCopy.inactivity_period = value
+    petFeederCopy.inactivity_period = value
     req = requests.post('http://[::1]:5000/set/inactivity_period/', headers = {"inactivity_period" : str(value)})
     dpg.set_value("inactivityPeriodText", str(value) + " minutes")
 
-def getHeatingTemperature():
+def get_heating_temperature():
     req = requests.get('http://[::1]:5000/get/heating_temperature/')
     if req.status_code == 200:
         value = float(req.headers["heating_temperature"])
-        objCopy.heating_temperature = value
+        petFeederCopy.heating_temperature = value
 
-def increaseHeatingTemperature():
-    value = objCopy.heating_temperature
+def increase_heating_temperature():
+    value = petFeederCopy.heating_temperature
     value += 1
-    objCopy.heating_temperature = value
+    petFeederCopy.heating_temperature = value
     req = requests.post('http://[::1]:5000/set/heating_temperature/', headers = {"heating_temperature" : str(value)})
     dpg.set_value("HeatingTemperatureText", str(value) + " °C")
 
-def decreaseHeatingTemperature():
-    value = objCopy.heating_temperature
+def decrease_heating_temperature():
+    value = petFeederCopy.heating_temperature
     value -= 1
-    objCopy.heating_temperature = value
+    petFeederCopy.heating_temperature = value
     req = requests.post('http://[::1]:5000/set/heating_temperature/', headers = {"heating_temperature" : str(value)})
     dpg.set_value("HeatingTemperatureText", str(value) + " °C")
 
-def getTanksStatus():
+def get_tank_status():
     req = requests.get('http://[::1]:5000/get/tanks_status/')
     if req.status_code == 200:
         value = req.headers["tanks_status"]
@@ -101,35 +101,35 @@ def getTanksStatus():
         newVal = []
         for i in value.split(","):
             newVal.append(float(i))
-        objCopy.tanks = newVal
+        petFeederCopy.tanks = newVal
 
-def reloadTanksStatus():
-    getTanksStatus()
-    dpg.set_value("WaterTank", "Water:    " + str(objCopy.tanks[Tanks.WATER]) + " g")
-    dpg.set_value("WetFoodTank", "Wet Food: " + str(objCopy.tanks[Tanks.WET_FOOD]) + " g")
-    dpg.set_value("DryFoodTank", "Dry food: " + str(objCopy.tanks[Tanks.DRY_FOOD]) + " g")
+def reload_tank_status():
+    get_tank_status()
+    dpg.set_value("WaterTank", "Water:    " + str(petFeederCopy.tanks[Tanks.WATER]) + " g")
+    dpg.set_value("WetFoodTank", "Wet Food: " + str(petFeederCopy.tanks[Tanks.WET_FOOD]) + " g")
+    dpg.set_value("DryFoodTank", "Dry food: " + str(petFeederCopy.tanks[Tanks.DRY_FOOD]) + " g")
 
-def fillTanks():
+def fill_tanks():
     req = requests.get('http://[::1]:5000/action/fill_tanks/')
     if req.status_code == 200:
-        reloadTanksStatus()
+        reload_tank_status()
 
-def giveWater():
-    req = requests.get('http://[::1]:5000/action/give_water/?q=50')
+def give_water():
+    req = requests.get('http://[::1]:5000/action/give_water/?q=' + str(dpg.get_value("water mass")))
     if req.status_code == 200:
-        reloadTanksStatus()
+        reload_tank_status()
 
-def giveWetFood():
-    req = requests.get('http://[::1]:5000/action/give_wet_food/')
+def give_wet_food():
+    req = requests.get('http://[::1]:5000/action/give_wet_food/?q=' + str(dpg.get_value("wet food mass")))
     if req.status_code == 200:
-        reloadTanksStatus()
+        reload_tank_status()
 
-def giveDryFood():
-    req = requests.get('http://[::1]:5000/action/give_dry_food/')
+def give_dry_food():
+    req = requests.get('http://[::1]:5000/action/give_dry_food/?q=' + str(dpg.get_value("dry food mass")))
     if req.status_code == 200:
-        reloadTanksStatus()
+        reload_tank_status()
 
-def setFeedingHours():
+def set_feeding_hours():
     global feedinghours_input
     values = dpg.get_value(feedinghours_input)
     req = requests.post('http://[::1]:5000/set/feeding_hours/', headers = {"feeding_hours" : values})
@@ -145,54 +145,63 @@ def setFeedingHours():
         if hour > 23 or minute > 59:
             raise ValueError
         new.append((hour, minute))
-    objCopy.feeding_hours = new
+    petFeederCopy.feeding_hours = new
 
-    dpg.set_value("CurrentFeedingHours", str(objCopy.feeding_hours))
+    dpg.set_value("CurrentFeedingHours", str(petFeederCopy.feeding_hours))
 
-def getFeedingHours():
+def get_feeding_hours():
     req = requests.get('http://[::1]:5000/get/feeding_hours/')
     if req.status_code == 200:
         values = req.headers["feeding_hours"]
         dpg.set_value("CurrentFeedingHours", values)
 
 #get values before running remote 
-getFeedingLimit()
-getInactivityPeriod()
-getHeatingTemperature()
-getTanksStatus()
+get_feeding_limit()
+get_inactivity_period()
+get_heating_temperature()
+get_tank_status()
 
 with dpg.window(label = "Feeding Limit", width = 180, height = 130, pos = (0, 0)):
-    dpg.add_text(str(objCopy.feeding_limit) + " g", id = "feedingLimitText")
-    dpg.add_button(label = "+", callback = increaseFeedingLimit)
-    dpg.add_button(label = "-", callback = decreaseFeedingLimit)
+    dpg.add_text(str(petFeederCopy.feeding_limit) + " g", tag ="feedingLimitText")
+    dpg.add_button(label = "+", callback = increase_feeding_limit)
+    dpg.add_button(label = "-", callback = decrease_feeding_limit)
 
 with dpg.window(label = "Inactivity Period", width = 180, height = 130, pos = (180, 0)):
-    dpg.add_text(str(objCopy.inactivity_period) + " minutes", id = "inactivityPeriodText")
-    dpg.add_button(label = "+", callback = increaseInactivityPeriod)
-    dpg.add_button(label = "-", callback = decreaseInactivityPeriod)
+    dpg.add_text(str(petFeederCopy.inactivity_period) + " minutes", tag ="inactivityPeriodText")
+    dpg.add_button(label = "+", callback = increase_inactivity_period)
+    dpg.add_button(label = "-", callback = decrease_inactivity_period)
 
 with dpg.window(label = "Heating Temperature", width = 180, height = 130, pos = (360, 0)):
-    dpg.add_text(str(objCopy.heating_temperature) + " °C", id = "HeatingTemperatureText")
-    dpg.add_button(label = "+", callback = increaseHeatingTemperature)
-    dpg.add_button(label = "-", callback = decreaseHeatingTemperature)
+    dpg.add_text(str(petFeederCopy.heating_temperature) + " °C", tag ="HeatingTemperatureText")
+    dpg.add_button(label = "+", callback = increase_heating_temperature)
+    dpg.add_button(label = "-", callback = decrease_heating_temperature)
 
 with dpg.window(label = "Tanks Status", width = 180, height = 130, pos = (540, 0)):
-    dpg.add_text("Water:    " + str(objCopy.tanks[Tanks.WATER]) + " g", id = "WaterTank")
-    dpg.add_text("Wet Food: " + str(objCopy.tanks[Tanks.WET_FOOD]) + " g", id = "WetFoodTank")
-    dpg.add_text("Dry food: " + str(objCopy.tanks[Tanks.DRY_FOOD]) + " g", id = "DryFoodTank")
-    dpg.add_button(label = "Fill", callback = fillTanks)
+    dpg.add_text("Water:    " + str(petFeederCopy.tanks[Tanks.WATER]) + " g", tag ="WaterTank")
+    dpg.add_text("Wet Food: " + str(petFeederCopy.tanks[Tanks.WET_FOOD]) + " g", tag ="WetFoodTank")
+    dpg.add_text("Dry food: " + str(petFeederCopy.tanks[Tanks.DRY_FOOD]) + " g", tag ="DryFoodTank")
+    dpg.add_button(label = "Fill", callback = fill_tanks)
 
-with dpg.window(label = "Actions", width = 180, height = 130, pos = (0, 130)):
-    dpg.add_button(label = "Give Water", callback = giveWater)
-    dpg.add_button(label = "Give Wet Food", callback = giveWetFood)
-    dpg.add_button(label = "Give Dry Food", callback = giveDryFood)
+with dpg.window(label = "Actions", width = 220, height = 130, pos = (0, 130)):
+    with dpg.group(horizontal=True, width=100):
+        dpg.add_button(label = "Give Water", callback = give_water)
+        dpg.add_input_float(tag="water mass", default_value=Tanks.WATER_DEFAULT)
+    with dpg.group(horizontal=True, width=100):
+        dpg.add_button(label = "Give Wet Food", callback = give_wet_food)
+        dpg.add_input_float(tag="wet food mass", default_value=Tanks.WET_FOOD_DEFAULT)
+    with dpg.group(horizontal=True, width=100):
+        dpg.add_button(label = "Give Dry Food", callback = give_dry_food)
+        dpg.add_input_float(tag="dry food mass", default_value=Tanks.DRY_FOOD_DEFAULT)
 
-with dpg.window(label = "Feeding Hours", width = 3 * 180, height = 130, pos = (180, 130)):
+with dpg.window(label = "Feeding Hours", width = 3 * 180, height = 130, pos = (220, 130)):
     global feedinghours_input
-    dpg.add_text(str(objCopy.feeding_hours), id="CurrentFeedingHours")
+    dpg.add_text(str(petFeederCopy.feeding_hours), tag="CurrentFeedingHours")
     feedinghours_input = dpg.add_input_text(label = "Feeding Hours")
-    dpg.add_button(label = "Set", callback = setFeedingHours)
-    getFeedingHours()
+    dpg.add_button(label = "Set", callback = set_feeding_hours)
+    get_feeding_hours()
+
+with dpg.window(label="Recommendations", width=2 * 180, height=130, pos=(0, 260)):
+    dpg.add_text("hello, world")
 
 dpg.create_viewport(title = "SmartPetFeeder Remote", width = 800, height = 600)
 dpg.setup_dearpygui()
