@@ -1,6 +1,4 @@
-from enum import Enum
-
-class PetTypes(Enum):
+class PetTypes:
     CAT = 0
     DOG = 1
     SNAKE = 2

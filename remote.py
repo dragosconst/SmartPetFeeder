@@ -4,6 +4,7 @@ import requests
 import app
 from PetFeeder import PetFeederClass, PetTypes, Tanks
 import re
+import csv
 
 petFeederCopy = PetFeederClass(feeding_hours = [], feeding_limit = 0, inactivity_period = 0, heating_temperature = 0, tanks = [0, 0, 0], pet = PetTypes.DOG)
 
@@ -130,8 +131,7 @@ def give_dry_food():
         reload_tank_status()
 
 def set_feeding_hours():
-    global feedinghours_input
-    values = dpg.get_value(feedinghours_input)
+    values = dpg.get_value("Feeding Hours")
     req = requests.post('http://[::1]:5000/set/feeding_hours/', headers = {"feeding_hours" : values})
     
     re_moment = r'(\d?\d):(\d?\d)'
@@ -154,6 +154,34 @@ def get_feeding_hours():
     if req.status_code == 200:
         values = req.headers["feeding_hours"]
         dpg.set_value("CurrentFeedingHours", values)
+
+def get_recommended_values(pet_id):
+    with open("recommendations.csv") as f:
+        f_reader = csv.DictReader(f, quoting=csv.QUOTE_NONNUMERIC)
+        for index, row in enumerate(f_reader):
+            if row["pet"] != pet_id:
+                continue
+            return row["f_limit"], row["water_def"], row["wet_food_def"], row["dry_food_def"], row["fh"], \
+                   row["heat_temp"]
+
+def set_recommended_values(sender, app_data, user_data):
+    pet_id = user_data[0]
+    feeding_limit, water_def, wet_food_def, dry_food_def, feeding_hours, heating_temperature = get_recommended_values(pet_id)
+
+    petFeederCopy.feeding_limit = feeding_limit
+    req = requests.post('http://[::1]:5000/set/feeding_limit/', headers = {"feeding_limit" : str(feeding_limit)})
+    dpg.set_value("feedingLimitText", str(feeding_limit) + " g")
+
+    dpg.set_value("water mass", water_def)
+    dpg.set_value("wet food mass", wet_food_def)
+    dpg.set_value("dry food mass", dry_food_def)
+
+    dpg.set_value("Feeding Hours", feeding_hours)
+    set_feeding_hours()
+
+    petFeederCopy.heating_temperature = heating_temperature
+    req = requests.post('http://[::1]:5000/set/heating_temperature/', headers = {"heating_temperature" : str(heating_temperature)})
+    dpg.set_value("HeatingTemperatureText", str(heating_temperature) + " °C")
 
 #get values before running remote 
 get_feeding_limit()
@@ -194,14 +222,19 @@ with dpg.window(label = "Actions", width = 220, height = 130, pos = (0, 130)):
         dpg.add_input_float(tag="dry food mass", default_value=Tanks.DRY_FOOD_DEFAULT)
 
 with dpg.window(label = "Feeding Hours", width = 3 * 180, height = 130, pos = (220, 130)):
-    global feedinghours_input
     dpg.add_text(str(petFeederCopy.feeding_hours), tag="CurrentFeedingHours")
-    feedinghours_input = dpg.add_input_text(label = "Feeding Hours")
+    dpg.add_input_text(label ="Feeding Hours", tag="Feeding Hours")
     dpg.add_button(label = "Set", callback = set_feeding_hours)
     get_feeding_hours()
 
 with dpg.window(label="Recommendations", width=2 * 180, height=130, pos=(0, 260)):
-    dpg.add_text("hello, world")
+    dpg.add_button(label="Cat", callback=set_recommended_values, user_data=(PetTypes.CAT,))
+    dpg.add_button(label="Dog", callback=set_recommended_values, user_data=(PetTypes.DOG,))
+    dpg.add_button(label="Snake")
+    dpg.add_button(label="Hamster")
+    dpg.add_button(label="Parrot")
+    dpg.add_button(label="Turtle")
+    dpg.add_button(label="Tortoise")
 
 dpg.create_viewport(title = "SmartPetFeeder Remote", width = 800, height = 600)
 dpg.setup_dearpygui()
