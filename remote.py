@@ -130,8 +130,10 @@ def give_dry_food():
     if req.status_code == 200:
         reload_tank_status()
 
-def set_feeding_hours():
-    values = dpg.get_value("Feeding Hours")
+def set_feeding_hours(sender, app_data, user_data):
+    values = user_data
+    if values is None:
+        values = dpg.get_value("Feeding Hours")
     req = requests.post('http://[::1]:5000/set/feeding_hours/', headers = {"feeding_hours" : values})
     
     re_moment = r'(\d?\d):(\d?\d)'
@@ -176,8 +178,7 @@ def set_recommended_values(sender, app_data, user_data):
     dpg.set_value("wet food mass", wet_food_def)
     dpg.set_value("dry food mass", dry_food_def)
 
-    dpg.set_value("Feeding Hours", feeding_hours)
-    set_feeding_hours()
+    set_feeding_hours(None, None, feeding_hours)
 
     petFeederCopy.heating_temperature = heating_temperature
     req = requests.post('http://[::1]:5000/set/heating_temperature/', headers = {"heating_temperature" : str(heating_temperature)})
