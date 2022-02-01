@@ -1,6 +1,4 @@
-from enum import Enum
-
-class PetTypes(Enum):
+class PetTypes:
     CAT = 0
     DOG = 1
     SNAKE = 2
@@ -15,9 +13,13 @@ class Tanks:
     WET_FOOD = 1
     DRY_FOOD = 2
 
-    WATER_DEFAULT = 300
-    WET_FOOD_DEFAULT = 75
-    DRY_FOOD_DEFAULT = 150
+    WATER_DEFAULT_PORTION = 300
+    WET_FOOD_DEFAULT_PORTION = 75
+    DRY_FOOD_DEFAULT_PORTION = 150
+
+    WATER_REFILL = 200
+    WET_FOOD_REFILL = 500
+    DRY_FOOD_REFILL = 400
 
 class PetFeederClass:
     def __init__(self, feeding_hours, feeding_limit, inactivity_period, heating_temperature, tanks, pet):

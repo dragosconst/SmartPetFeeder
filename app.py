@@ -171,7 +171,8 @@ def init_app():
         SECRET_KEY='dev',
     )
     
-    petFeeder = PetFeederClass(feeding_hours = [(10, 00)], feeding_limit = 100, inactivity_period = 450, heating_temperature = 15, tanks = [200, 500, 400], pet = PetTypes.DOG)
+    petFeeder = PetFeederClass(feeding_hours = [(10, 00)], feeding_limit = 100, inactivity_period = 450,
+                               heating_temperature = 15, tanks = [200, 500, 400], pet = PetTypes.DOG)
 
     db.init_app(app)
     with app.app_context():
@@ -378,6 +379,8 @@ def init_app():
             food = "water"
         elif food_type == Tanks.WET_FOOD:
             food = "wet food"
+            if q > petFeeder.feeding_limit:
+                q = petFeeder.feeding_limit
         else:
             food = "dry food"
         if q > petFeeder.tanks[food_type]:
@@ -455,6 +458,7 @@ if __name__ == '__main__':
     utils.simMutex = Lock()
 
     if choice.upper() == 'Y':
+        # wait for server response before starting the simulation
         thread_waiting_for_response = Thread(target = wait_for_response)
         thread_waiting_for_response.start()
 

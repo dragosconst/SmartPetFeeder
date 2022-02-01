@@ -6,7 +6,7 @@ import copy
 import requests
 
 #the device's sensors
-class Sensors():
+class Sensors:
     water_temp = 0
     wet_food_temp = 1
     pet_collar = 2
@@ -16,7 +16,7 @@ class Sensors():
     movement = 6
 
 
-class myTime:
+class MyTime:
     passing_minutes = 7
 
     def __init__(self, hour, minute, day, month, year):
@@ -26,7 +26,7 @@ class myTime:
         self.month = month
         self.year = year
 
-    def increaseTime(self, increasing_minutes=passing_minutes):
+    def increase_time(self, increasing_minutes=passing_minutes):
         self.minute = self.minute + increasing_minutes
         if self.minute >= 60:
             self.hour = self.hour + 1
@@ -66,79 +66,77 @@ class myTime:
 
 def simulation(data_file, petFeeder, mqtt, thread_waiting):
     thread_waiting.join()
-    utils.simMutex.acquire()
     turned_on = True
-    currentTime = myTime(10, 0, 1, 1, 2022)  # 10:00, 1 January 2022
-    timeSincePetDetection = 0
-    readOn = True
+    current_time = MyTime(10, 0, 1, 1, 2022)  # 10:00, 1 January 2022
+    time_since_pet_detection = 0
+    read_on = True
     while turned_on:
-        if (readOn):
+        if (read_on):
             next_line = data_file.readline().split(",")
-            readOn = False  # don't read again until the time is met
+            read_on = False  # don't read again until the time is met
             try:
                 for i in range(len(next_line)):
                     next_line[i] = int(next_line[i])
-                next_data_time = myTime(next_line[0], next_line[1], next_line[2], next_line[3], next_line[4])
+                next_data_time = MyTime(next_line[0], next_line[1], next_line[2], next_line[3], next_line[4])
                 next_data_sensor = next_line[5]
                 next_data_value = next_line[6]
             except:
-                next_data_time = myTime(0, 0, 1, 1, 3000)
+                next_data_time = MyTime(0, 0, 1, 1, 3000)
                 turned_on = False
-        to_print1 = currentTime.show() + ": "
+        to_print1 = current_time.show() + ": "
         to_print2 = " "
 
-        # append ; and the fake date at the end, so the simulation is outputed as expected
-        if next_data_time <= currentTime:
-            readOn = True  # the time has been met, read again
+        if next_data_time <= current_time:
+            read_on = True  # the time has been met, read again
             # next_data_time.year = 2000 # fix a bug where sometimes it writes the value twice
             if next_data_sensor == Sensors.water_temp:
                 if next_data_value < petFeeder.heating_temperature:
                     to_print2 = "Water temperature at " + str(next_data_value) + " °C, heating"
                 else:
                     to_print2 = "Water temperature at " + str(next_data_value) + " °C"
-                publish(mqtt, '/SmartPetFeeder/water_temp', str(next_data_value) + ";" + currentTime.show())
+                publish(mqtt, '/SmartPetFeeder/water_temp', str(next_data_value) + ";" + current_time.show())
             elif next_data_sensor == Sensors.wet_food_temp:
                 if next_data_value < petFeeder.heating_temperature:
                     to_print2 = "Wet food temperature at " + str(next_data_value) + " °C, heating"
                 else:
                     to_print2 = "Wet food temperature at " + str(next_data_value) + " °C"
-                publish(mqtt, '/SmartPetFeeder/wet_food_temp', str(next_data_value) + ";" + currentTime.show())
+                publish(mqtt, '/SmartPetFeeder/wet_food_temp', str(next_data_value) + ";" + current_time.show())
             elif next_data_sensor == Sensors.pet_collar:
-                timeSincePetDetection = 0
+                time_since_pet_detection = 0
                 to_print2 = "Pet detected"
-                publish(mqtt, '/SmartPetFeeder/pet_detection_warning', to_print2 + ";" + currentTime.show())
+                publish(mqtt, '/SmartPetFeeder/pet_detection_warning', to_print2 + ";" + current_time.show())
             elif next_data_sensor == Sensors.water_mass:
                 if mqtt is None:
                     petFeeder.tanks[Tanks.WATER] = next_data_value
                 to_print2 = f"Water mass has changed to {next_data_value} g"
-                publish(mqtt, '/SmartPetFeeder/water_mass', str(next_data_value) + ";" + currentTime.show())
+                publish(mqtt, '/SmartPetFeeder/water_mass', str(next_data_value) + ";" + current_time.show())
             elif next_data_sensor == Sensors.wet_food_mass:
                 if mqtt is None:
                     petFeeder.tanks[Tanks.WET_FOOD] = next_data_value
                 to_print2 = f"Wet food mass has changed to {next_data_value} g"
-                publish(mqtt, '/SmartPetFeeder/wet_food_mass', str(next_data_value) + ";" + currentTime.show())
+                publish(mqtt, '/SmartPetFeeder/wet_food_mass', str(next_data_value) + ";" + current_time.show())
             elif next_data_sensor == Sensors.dry_food_mass:
                 if mqtt is None:
                     petFeeder.tanks[Tanks.DRY_FOOD] = next_data_value
                 to_print2 = f"Dry food mass has changed to {next_data_value} g"
-                publish(mqtt, '/SmartPetFeeder/dry_food_mass', str(next_data_value) + ";" + currentTime.show())
+                publish(mqtt, '/SmartPetFeeder/dry_food_mass', str(next_data_value) + ";" + current_time.show())
             elif next_data_sensor == Sensors.movement:
                 to_print2 = f"Movement detected!"
-                publish(mqtt, '/SmartPetFeeder/movement_detection', to_print2 + ";" + currentTime.show())
+                publish(mqtt, '/SmartPetFeeder/movement_detection', to_print2 + ";" + current_time.show())
             # repeat for every sensor
         else:
-            if timeSincePetDetection > petFeeder.inactivity_period:
-                to_print2 = f"Warning, pet has not eaten for {timeSincePetDetection} minutes!"
-                publish(mqtt, '/SmartPetFeeder/pet_detection_warning', to_print2 + ";" + currentTime.show())
+            if time_since_pet_detection > petFeeder.inactivity_period:
+                to_print2 = f"Warning, pet has not eaten for {time_since_pet_detection} minutes!"
+                publish(mqtt, '/SmartPetFeeder/pet_detection_warning', to_print2)
 
-            futureTime = copy.deepcopy(currentTime)
-            currentTime.increaseTime()
-            timeSincePetDetection += myTime.passing_minutes
+            future_time = copy.deepcopy(current_time)
+            current_time.increase_time()
+            time_since_pet_detection += MyTime.passing_minutes
 
-            for i in range(myTime.passing_minutes):
-                futureTime.increaseTime(1)
-                hour = futureTime.hour
-                minute = futureTime.minute
+            for i in range(MyTime.passing_minutes):
+                future_time.increase_time(1)
+                hour = future_time.hour
+                minute = future_time.minute
                 if (hour, minute) in petFeeder.feeding_hours:
                     requests.get('http://[::1]:5000/action/give_water/?q=50', headers={"simulation": str(True)})
                     requests.get('http://[::1]:5000/action/give_wet_food/', headers={"simulation": str(True)})
@@ -152,15 +150,13 @@ def simulation(data_file, petFeeder, mqtt, thread_waiting):
 
         time.sleep(1)
     print("Finished simulation")
-    utils.simMutex.release()
 
 def wait_for_response():
-    utils.simMutex.acquire()
-    noResponse = True
-    while noResponse:
+    no_response = True
+    while no_response:
         try:
             status_code = requests.get('http://[::1]:5000/').status_code
-            noResponse = False
+            if status_code == 200:
+                no_response = False
         except:
             continue
-    utils.simMutex.release()
