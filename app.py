@@ -24,6 +24,8 @@ petFeeder = None
 socketio = None
 mqtt = None
 
+covered = None
+
 def run_socketio_app():
     global socketio
     socketio = SocketIO(app, async_mode="eventlet")
@@ -59,6 +61,9 @@ def init_mqtt():
 
         @mqtt.on_message()
         def mqtt_thread(client, userdata, message):
+            global covered
+            covered = False
+
             data = dict(
                 topic=message.topic,
                 payload=message.payload.decode()
@@ -157,7 +162,9 @@ def init_mqtt():
                 publish(mqtt, '/SmartPetFeeder/ultrasound/', str(4 * 10 ** 5)) # send ultrasound when movement is detected with no collar detection
                 # could be a datapoint, since this is a frequency only cats and dogs can hear
 
+            covered = True
         print("Connected to MQTT broker!")
+
 
     except:
         mqtt = None
@@ -291,7 +298,6 @@ def init_app():
             for moment in values.split(','):
                 x = re.search(re_moment, moment)
                 if x is None:
-                    print("-"*30, moment)
                     raise ValueError
 
                 hour = int(moment.split(":")[0])

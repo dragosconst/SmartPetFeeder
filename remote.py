@@ -110,11 +110,6 @@ def reload_tank_status():
     dpg.set_value("WetFoodTank", "Wet Food: " + str(petFeederCopy.tanks[Tanks.WET_FOOD]) + " g")
     dpg.set_value("DryFoodTank", "Dry food: " + str(petFeederCopy.tanks[Tanks.DRY_FOOD]) + " g")
 
-def fill_tanks():
-    req = requests.get('http://[::1]:5000/action/fill_tanks/')
-    if req.status_code == 200:
-        reload_tank_status()
-
 def give_water():
     req = requests.get('http://[::1]:5000/action/give_water/?q=' + str(dpg.get_value("water mass")))
     if req.status_code == 200:
@@ -190,55 +185,56 @@ get_inactivity_period()
 get_heating_temperature()
 get_tank_status()
 
-with dpg.window(label = "Feeding Limit", width = 180, height = 130, pos = (0, 0)):
-    dpg.add_text(str(petFeederCopy.feeding_limit) + " g", tag ="feedingLimitText")
-    dpg.add_button(label = "+", callback = increase_feeding_limit)
-    dpg.add_button(label = "-", callback = decrease_feeding_limit)
+if True:  # pragma: no cover
+    with dpg.window(label = "Feeding Limit", width = 180, height = 130, pos = (0, 0)): 
+        dpg.add_text(str(petFeederCopy.feeding_limit) + " g", tag ="feedingLimitText")
+        dpg.add_button(label = "+", callback = increase_feeding_limit)
+        dpg.add_button(label = "-", callback = decrease_feeding_limit)
 
-with dpg.window(label = "Inactivity Period", width = 180, height = 130, pos = (180, 0)):
-    dpg.add_text(str(petFeederCopy.inactivity_period) + " minutes", tag ="inactivityPeriodText")
-    dpg.add_button(label = "+", callback = increase_inactivity_period)
-    dpg.add_button(label = "-", callback = decrease_inactivity_period)
+    with dpg.window(label = "Inactivity Period", width = 180, height = 130, pos = (180, 0)):
+        dpg.add_text(str(petFeederCopy.inactivity_period) + " minutes", tag ="inactivityPeriodText")
+        dpg.add_button(label = "+", callback = increase_inactivity_period)
+        dpg.add_button(label = "-", callback = decrease_inactivity_period)
 
-with dpg.window(label = "Heating Temperature", width = 180, height = 130, pos = (360, 0)):
-    dpg.add_text(str(petFeederCopy.heating_temperature) + " °C", tag ="HeatingTemperatureText")
-    dpg.add_button(label = "+", callback = increase_heating_temperature)
-    dpg.add_button(label = "-", callback = decrease_heating_temperature)
+    with dpg.window(label = "Heating Temperature", width = 180, height = 130, pos = (360, 0)):
+        dpg.add_text(str(petFeederCopy.heating_temperature) + " °C", tag ="HeatingTemperatureText")
+        dpg.add_button(label = "+", callback = increase_heating_temperature)
+        dpg.add_button(label = "-", callback = decrease_heating_temperature)
 
-with dpg.window(label = "Tanks Status", width = 180, height = 130, pos = (540, 0)):
-    dpg.add_text("Water:    " + str(petFeederCopy.tanks[Tanks.WATER]) + " g", tag ="WaterTank")
-    dpg.add_text("Wet Food: " + str(petFeederCopy.tanks[Tanks.WET_FOOD]) + " g", tag ="WetFoodTank")
-    dpg.add_text("Dry food: " + str(petFeederCopy.tanks[Tanks.DRY_FOOD]) + " g", tag ="DryFoodTank")
-    dpg.add_button(label = "Fill", callback = fill_tanks)
+    with dpg.window(label = "Tanks Status", width = 180, height = 130, pos = (540, 0)):
+        dpg.add_text("Water:    " + str(petFeederCopy.tanks[Tanks.WATER]) + " g", tag ="WaterTank")
+        dpg.add_text("Wet Food: " + str(petFeederCopy.tanks[Tanks.WET_FOOD]) + " g", tag ="WetFoodTank")
+        dpg.add_text("Dry food: " + str(petFeederCopy.tanks[Tanks.DRY_FOOD]) + " g", tag ="DryFoodTank")
 
-with dpg.window(label = "Actions", width = 220, height = 130, pos = (0, 130)):
-    with dpg.group(horizontal=True, width=100):
-        dpg.add_button(label = "Give Water", callback = give_water)
-        dpg.add_input_float(tag="water mass", default_value=Tanks.WATER_DEFAULT)
-    with dpg.group(horizontal=True, width=100):
-        dpg.add_button(label = "Give Wet Food", callback = give_wet_food)
-        dpg.add_input_float(tag="wet food mass", default_value=Tanks.WET_FOOD_DEFAULT)
-    with dpg.group(horizontal=True, width=100):
-        dpg.add_button(label = "Give Dry Food", callback = give_dry_food)
-        dpg.add_input_float(tag="dry food mass", default_value=Tanks.DRY_FOOD_DEFAULT)
+    with dpg.window(label = "Actions", width = 220, height = 130, pos = (0, 130)):
+        with dpg.group(horizontal=True, width=100):
+            dpg.add_button(label = "Give Water", callback = give_water)
+            dpg.add_input_float(tag="water mass", default_value=Tanks.WATER_DEFAULT_PORTION)
+        with dpg.group(horizontal=True, width=100):
+            dpg.add_button(label = "Give Wet Food", callback = give_wet_food)
+            dpg.add_input_float(tag="wet food mass", default_value=Tanks.WET_FOOD_DEFAULT_PORTION)
+        with dpg.group(horizontal=True, width=100):
+            dpg.add_button(label = "Give Dry Food", callback = give_dry_food)
+            dpg.add_input_float(tag="dry food mass", default_value=Tanks.DRY_FOOD_DEFAULT_PORTION)
 
-with dpg.window(label = "Feeding Hours", width = 3 * 180, height = 130, pos = (220, 130)):
-    dpg.add_text(str(petFeederCopy.feeding_hours), tag="CurrentFeedingHours")
-    dpg.add_input_text(label ="Feeding Hours", tag="Feeding Hours")
-    dpg.add_button(label = "Set", callback = set_feeding_hours)
-    get_feeding_hours()
+    with dpg.window(label = "Feeding Hours", width = 3 * 180, height = 130, pos = (220, 130)):
+        dpg.add_text(str(petFeederCopy.feeding_hours), tag="CurrentFeedingHours")
+        dpg.add_input_text(label ="Feeding Hours", tag="Feeding Hours")
+        dpg.add_button(label = "Set", callback = set_feeding_hours)
+        get_feeding_hours()
 
-with dpg.window(label="Recommendations", width=2 * 180, height=130, pos=(0, 260)):
-    dpg.add_button(label="Cat", callback=set_recommended_values, user_data=(PetTypes.CAT,))
-    dpg.add_button(label="Dog", callback=set_recommended_values, user_data=(PetTypes.DOG,))
-    dpg.add_button(label="Snake")
-    dpg.add_button(label="Hamster")
-    dpg.add_button(label="Parrot")
-    dpg.add_button(label="Turtle")
-    dpg.add_button(label="Tortoise")
+    with dpg.window(label="Recommendations", width=2 * 180, height=130, pos=(0, 260)):
+        dpg.add_button(label="Cat", callback=set_recommended_values, user_data=(PetTypes.CAT,))
+        dpg.add_button(label="Dog", callback=set_recommended_values, user_data=(PetTypes.DOG,))
+        dpg.add_button(label="Snake")
+        dpg.add_button(label="Hamster")
+        dpg.add_button(label="Parrot")
+        dpg.add_button(label="Turtle")
+        dpg.add_button(label="Tortoise")
 
-dpg.create_viewport(title = "SmartPetFeeder Remote", width = 800, height = 600)
-dpg.setup_dearpygui()
-dpg.show_viewport()
-dpg.start_dearpygui()
-dpg.destroy_context()
+if __name__ == '__main__': # pragma: no cover
+    dpg.create_viewport(title = "SmartPetFeeder Remote", width = 800, height = 600)
+    dpg.setup_dearpygui()
+    dpg.show_viewport()
+    dpg.start_dearpygui()
+    dpg.destroy_context()

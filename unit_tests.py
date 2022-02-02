@@ -1,18 +1,30 @@
 from email import header
 from http.client import ResponseNotReady
 import unittest
+import requests
 from urllib import response
 import app
 from PetFeeder import Tanks
 from simulation import MyTime
 import remote
+from utils import publish
 
 
 class PetFeederTests(unittest.TestCase):
     def setUp(self):
         app.init_app()
-        app.init_mqtt()
         self.app = app.app.test_client()
+        self.mqtt = app.init_mqtt()
+
+    def test_mqtt(self):
+        publish(self.mqtt, '/SmartPetFeeder/heating_temperature', '30')
+        publish(self.mqtt, '/SmartPetFeeder/water_temp', '10')
+        publish(self.mqtt, '/SmartPetFeeder/wet_food_temp', '15')
+        publish(self.mqtt, '/SmartPetFeeder/pet_detection_warning', '10')
+        publish(self.mqtt, '/SmartPetFeeder/wet_food_mass', '10')
+        publish(self.mqtt, '/SmartPetFeeder/dry_food_mass', '10')
+        publish(self.mqtt, '/SmartPetFeeder/movement_detection', '10')
+        self.assertTrue(app.covered)
 
     def test_set_heating_temperature_valid_value(self):
         value = 33.5
@@ -136,14 +148,6 @@ class PetFeederTests(unittest.TestCase):
         self.assertEqual(
             app.petFeeder.tanks[Tanks.WATER] + value, initial_tank_level)
 
-    def test_give_water_default_value(self):
-        initial_tank_level = app.petFeeder.tanks[Tanks.WATER]
-        response = self.app.get('/action/give_water/')
-
-        self.assertEqual(response.status_code, 406)
-        self.assertEqual(app.petFeeder.tanks[Tanks.WATER] + (Tanks.WATER_DEFAULT_PORTION if initial_tank_level >= Tanks.WATER_DEFAULT_PORTION
-                                                             else 0), initial_tank_level)
-
     def test_give_water_higher_value(self):
         initial_tank_level = app.petFeeder.tanks[Tanks.WATER]
         value = initial_tank_level + 500
@@ -151,14 +155,6 @@ class PetFeederTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 406)
         self.assertEqual(app.petFeeder.tanks[Tanks.WATER], initial_tank_level)
-
-    def test_give_wet_food(self):
-        initial_tank_level = app.petFeeder.tanks[Tanks.WET_FOOD]
-        response = self.app.get('/action/give_wet_food/')
-
-        self.assertEqual(response.status_code, 406)
-        self.assertEqual(app.petFeeder.tanks[Tanks.WET_FOOD] + (Tanks.WET_FOOD_DEFAULT_PORTION if initial_tank_level >= Tanks.WET_FOOD_DEFAULT_PORTION
-                                                                else 0), initial_tank_level)
 
     def test_give_dry_food(self):
         initial_tank_level = app.petFeeder.tanks[Tanks.DRY_FOOD]
@@ -187,6 +183,16 @@ class PetFeederTests(unittest.TestCase):
         time_2 = MyTime(10, 59, 7, 1, 2022)
         self.assertFalse(time_1 == time_2)
 
+    def test_simultation_le_1(self):
+        time_1 = MyTime(0, 0, 1, 1, 2023)
+        time_2 = MyTime(23, 59, 31, 12, 2022)
+        self.assertTrue(time_1 >= time_2)
+
+    def test_simultation_le_2(self):
+        time_1 = MyTime(23, 59, 31, 12, 2022)
+        time_2 = MyTime(23, 58, 31, 12, 2022)
+        self.assertTrue(time_1 >= time_2)
+
     def test_simulation_show(self):
         time = MyTime(23, 59, 30, 1, 2022)
         show_time = time.show()
@@ -202,14 +208,52 @@ class PetFeederTests(unittest.TestCase):
         time.increase_time(17)
         self.assertTrue(time == MyTime(22, 47, 11, 1, 2022))
 
-    def test_simultation_le(self):
-        time_1 = MyTime(0, 0, 1, 1, 2023)
-        time_2 = MyTime(23, 59, 31, 12, 2022)
-        self.assertTrue(time_1 >= time_2)
-
     def test_remote_get_feeding_limit(self):
         remote.get_feeding_limit()
-        #self.assertEqual(remote.petFeederCopy.feeding_limit, app.petFeeder.feeding_limit)
+        req = requests.get('http://[::1]:5000/get/feeding_limit/')
+        self.assertEqual(remote.petFeederCopy.feeding_limit, float(req.headers["feeding_limit"]))
+
+    def test_remote_get_inactivity_period(self):
+        remote.get_inactivity_period()
+        req = requests.get('http://[::1]:5000/get/inactivity_period/')
+        self.assertEqual(remote.petFeederCopy.inactivity_period,  float(req.headers["inactivity_period"]))
+
+    def test_remote_get_heating_temperature(self):
+        remote.get_heating_temperature()
+        req = requests.get('http://[::1]:5000/get/heating_temperature/')
+        self.assertEqual(remote.petFeederCopy.heating_temperature,  float(req.headers["heating_temperature"]))
+
+    def test_remote_increase_feeding_limit(self):
+        remote.increase_feeding_limit()
+        req = requests.get('http://[::1]:5000/get/feeding_limit/')
+        self.assertEqual(remote.petFeederCopy.feeding_limit, float(req.headers["feeding_limit"]))
+
+    def test_remote_decrease_feeding_limit(self):
+        remote.decrease_feeding_limit()
+        req = requests.get('http://[::1]:5000/get/feeding_limit/')
+        self.assertEqual(remote.petFeederCopy.feeding_limit, float(req.headers["feeding_limit"]))
+
+    def test_remote_increase_inactivity_period(self):
+        remote.increase_inactivity_period()
+        req = requests.get('http://[::1]:5000/get/inactivity_period/')
+        self.assertEqual(remote.petFeederCopy.inactivity_period, float(req.headers["inactivity_period"]))
+
+    def test_remote_decrease_inactivity_period(self):
+        remote.decrease_inactivity_period()
+        req = requests.get('http://[::1]:5000/get/inactivity_period/')
+        self.assertEqual(remote.petFeederCopy.inactivity_period,
+                         float(req.headers["inactivity_period"]))
+
+    def test_remote_increase_heating_temperature(self):
+        remote.increase_heating_temperature()
+        req = requests.get('http://[::1]:5000/get/heating_temperature/')
+        self.assertEqual(remote.petFeederCopy.heating_temperature,
+                         float(req.headers["heating_temperature"]))
+
+    def test_remote_decrease_heating_temperature(self):
+        remote.decrease_heating_temperature()
+        req = requests.get('http://[::1]:5000/get/heating_temperature/')
+        self.assertEqual(remote.petFeederCopy.heating_temperature, float(req.headers["heating_temperature"]))
 
 
 if __name__ == "__main__":

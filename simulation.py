@@ -64,7 +64,7 @@ class MyTime:
         return False
 
 
-def simulation(data_file, petFeeder, mqtt, thread_waiting):
+def simulation(data_file, petFeeder, mqtt, thread_waiting): # pragma: no cover
     thread_waiting.join()
     turned_on = True
     current_time = MyTime(10, 0, 1, 1, 2022)  # 10:00, 1 January 2022
@@ -151,7 +151,7 @@ def simulation(data_file, petFeeder, mqtt, thread_waiting):
         time.sleep(1)
     print("Finished simulation")
 
-def wait_for_response():
+def wait_for_response(): # pragma: no cover
     no_response = True
     while no_response:
         try:
