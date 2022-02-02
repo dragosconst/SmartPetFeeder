@@ -152,18 +152,18 @@ def get_feeding_hours():
         values = req.headers["feeding_hours"]
         dpg.set_value("CurrentFeedingHours", values)
 
-def get_recommended_values(pet_id):
+def get_recommended_values(pet_name):
     with open("recommendations.csv") as f:
         f_reader = csv.DictReader(f, quoting=csv.QUOTE_NONNUMERIC)
         for index, row in enumerate(f_reader):
-            if row["pet"] != pet_id:
+            if row["pet_name"] != pet_name:
                 continue
-            return row["f_limit"], row["water_def"], row["wet_food_def"], row["dry_food_def"], row["fh"], \
-                   row["heat_temp"]
+            return float(row["f_limit"]), float(row["water_def"]), float(row["wet_food_def"]), float(row["dry_food_def"]), row["fh"], \
+                   float(row["heat_temp"])
 
 def set_recommended_values(sender, app_data, user_data):
-    pet_id = user_data[0]
-    feeding_limit, water_def, wet_food_def, dry_food_def, feeding_hours, heating_temperature = get_recommended_values(pet_id)
+    pet_name = user_data[0]
+    feeding_limit, water_def, wet_food_def, dry_food_def, feeding_hours, heating_temperature = get_recommended_values(pet_name)
 
     petFeederCopy.feeding_limit = feeding_limit
     req = requests.post('http://[::1]:5000/set/feeding_limit/', headers = {"feeding_limit" : str(feeding_limit)})
@@ -223,14 +223,36 @@ if True:  # pragma: no cover
         dpg.add_button(label = "Set", callback = set_feeding_hours)
         get_feeding_hours()
 
-    with dpg.window(label="Recommendations", width=2 * 180, height=130, pos=(0, 260)):
-        dpg.add_button(label="Cat", callback=set_recommended_values, user_data=(PetTypes.CAT,))
-        dpg.add_button(label="Dog", callback=set_recommended_values, user_data=(PetTypes.DOG,))
-        dpg.add_button(label="Snake")
-        dpg.add_button(label="Hamster")
-        dpg.add_button(label="Parrot")
-        dpg.add_button(label="Turtle")
-        dpg.add_button(label="Tortoise")
+    with dpg.window(label="Recommendations", width=4.25 * 180, height=150, pos=(0, 260)):
+        with dpg.group(horizontal=True, width=180):
+            dpg.add_button(label="British Shorthair", callback=set_recommended_values, user_data=("British Shorthair",))
+            dpg.add_button(label="Fox", callback=set_recommended_values, user_data=("Fox",))
+            dpg.add_button(label="Hedgehog", callback=set_recommended_values, user_data=("Hedgehog",))
+            dpg.add_button(label="Rat", callback=set_recommended_values, user_data=("Rat",))
+
+        with dpg.group(horizontal=True, width=180):
+            dpg.add_button(label="Ball Python", callback=set_recommended_values, user_data=("Ball Python",))
+            dpg.add_button(label="Hamster", callback=set_recommended_values, user_data=("Hamster",))
+            dpg.add_button(label="Cockatoo", callback=set_recommended_values, user_data=("Cockatoo",))
+            dpg.add_button(label="Turtle", callback=set_recommended_values, user_data=("Turtle",))
+
+        with dpg.group(horizontal=True, width=180):
+            dpg.add_button(label="Cat", callback=set_recommended_values, user_data=("Cat",))
+            dpg.add_button(label="Shepherd Dog", callback=set_recommended_values, user_data=("Shepherd Dog",))
+            dpg.add_button(label="Bichon", callback=set_recommended_values, user_data=("Bichon",))
+            dpg.add_button(label="Golden Retriever", callback=set_recommended_values, user_data=("Golden Retriever",))
+
+        with dpg.group(horizontal=True, width=180):
+            dpg.add_button(label="Tortoise", callback=set_recommended_values, user_data=("Tortoise",))
+            dpg.add_button(label="Lizard", callback=set_recommended_values, user_data=("Lizard",))
+            dpg.add_button(label="Asian Monitor", callback=set_recommended_values, user_data=("Asian Monitor",))
+            dpg.add_button(label="Gecko", callback=set_recommended_values, user_data=("Gecko",))
+
+        with dpg.group(horizontal=True, width=180):
+            dpg.add_button(label="Bearded Dragon", callback=set_recommended_values, user_data=("Bearded Dragon",))
+            dpg.add_button(label="Guinea Pig", callback=set_recommended_values, user_data=("Guinea Pig",))
+            dpg.add_button(label="Canadian Squirrel", callback=set_recommended_values, user_data=("Canadian Squirrel",))
+            dpg.add_button(label="Rabbit", callback=set_recommended_values, user_data=("Rabbit",))
 
 if __name__ == '__main__': # pragma: no cover
     dpg.create_viewport(title = "SmartPetFeeder Remote", width = 800, height = 600)
