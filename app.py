@@ -24,6 +24,8 @@ petFeeder = None
 socketio = None
 mqtt = None
 
+covered = None
+
 def run_socketio_app():
     global socketio
     socketio = SocketIO(app, async_mode="eventlet")
@@ -59,6 +61,9 @@ def init_mqtt():
 
         @mqtt.on_message()
         def mqtt_thread(client, userdata, message):
+            global covered
+            covered = False
+
             data = dict(
                 topic=message.topic,
                 payload=message.payload.decode()
@@ -154,9 +159,12 @@ def init_mqtt():
                             (msg,)
                         )
                         database.commit()
+                publish(mqtt, '/SmartPetFeeder/ultrasound/', str(4 * 10 ** 5)) # send ultrasound when movement is detected with no collar detection
+                # could be a datapoint, since this is a frequency only cats and dogs can hear
 
-
+            covered = True
         print("Connected to MQTT broker!")
+
 
     except:
         mqtt = None
@@ -286,7 +294,7 @@ def init_app():
     @app.route("/set/feeding_hours/", methods=['POST'])
     def set_feeding_hours():
         log_request('POST', '/set/feeding_hours/', request.headers)
-        re_moment = r'(\d?\d):(\d?\d)'
+        re_moment = r'^(2[0-3]|[01]?[0-9]):([0-5]?[0-9])$'
         try:
             values = request.headers["feeding_hours"] # [11:30, 12:45, 19:20, 13:22]
             oldValues = petFeeder.feeding_hours
@@ -295,8 +303,9 @@ def init_app():
                 x = re.search(re_moment, moment)
                 if x is None:
                     raise ValueError
-                hour = int(x.group(1))
-                minute = int(x.group(2))
+
+                hour = int(moment.split(":")[0])
+                minute = int(moment.split(":")[1])
                 if hour > 23 or minute > 59:
                     raise ValueError
                 new.append((hour, minute))
