@@ -283,7 +283,7 @@ def init_app():
     @app.route("/set/feeding_hours/", methods=['POST'])
     def set_feeding_hours():
         log_request('POST', '/set/feeding_hours/', request.headers)
-        re_moment = r'(\d?\d):(\d?\d)'
+        re_moment = r'^(2[0-3]|[01]?[0-9]):([0-5]?[0-9])$'
         try:
             values = request.headers["feeding_hours"] # [11:30, 12:45, 19:20, 13:22]
             oldValues = petFeeder.feeding_hours
@@ -291,9 +291,11 @@ def init_app():
             for moment in values.split(','):
                 x = re.search(re_moment, moment)
                 if x is None:
+                    print("-"*30, moment)
                     raise ValueError
-                hour = int(x.group(1))
-                minute = int(x.group(2))
+
+                hour = int(moment.split(":")[0])
+                minute = int(moment.split(":")[1])
                 if hour > 23 or minute > 59:
                     raise ValueError
                 new.append((hour, minute))
