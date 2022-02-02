@@ -250,6 +250,9 @@ def init_app():
         log_request('POST', '/set/heating_temperature/', request.headers)
         try:
             value = float(request.headers["heating_temperature"])
+            if value > PetFeederClass.MAX_HEATING_TEMPERATURE or \
+               value < PetFeederClass.MIN_HEATING_TEMPERATURE:
+                raise ValueError
             oldTemp = petFeeder.heating_temperature
             petFeeder.heating_temperature = value
             msg = f"Heating temperature changed from {oldTemp} °C to {value} °C!"
@@ -270,7 +273,8 @@ def init_app():
         log_request('POST', '/set/feeding_limit/', request.headers)
         try:
             value = float(request.headers["feeding_limit"])
-            if value < 0:
+            if value > PetFeederClass.MAX_FEEDING_LIMIT or \
+               value < PetFeederClass.MIN_FEEDING_LIMIT:
                 raise ValueError
             oldValue = petFeeder.feeding_limit
             petFeeder.feeding_limit = value
@@ -324,7 +328,8 @@ def init_app():
         log_request('POST', '/set/inactivity_period/', request.headers)
         try:
             value = float(request.headers["inactivity_period"])
-            if value < 0:
+            if value > PetFeederClass.MAX_INACTIVITY_PERIOD or \
+               value < PetFeederClass.MIN_INACTIVITY_PERIOD:
                 raise ValueError
             oldValue = petFeeder.inactivity_period
             petFeeder.inactivity_period = value

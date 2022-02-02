@@ -1,0 +1,175 @@
+asyncapi: 2.3.0
+info:
+  title: SmartPetFeeder
+  version: 1.0.0
+  contact:
+    name: Hello, World!
+    url: https://github.com/dragosconst/SmartPetFeeder
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  test:
+    url: localhost:1883
+    protocol: mqtt
+    description: Mosquitto Broker
+defaultContentType: text/plain; charset=utf-8
+channels:
+  /SmartPetFeeder/heating_temperature:
+    publish:
+      summary: Publish changes made to the heating temperature from the remote.
+      message:
+        $ref: '#/components/messages/heating_temperature'
+    subscribe:
+      summary: Receive the current heating temperature.
+      message:
+        $ref: '#/components/messages/heating_temperature'
+  /SmartPetFeeder/feeding_limit:
+    publish:
+      summary: Publish changes made to the feeding limit from the remote.
+      message:
+        $ref: '#/components/messages/feeding_limit'
+    subscribe:
+      summary: Receive the current feeding limit.
+      message:
+        $ref: '#/components/messages/feeding_limit'
+  /SmartPetFeeder/inactivity_period:
+    publish:
+      summary: Publish changes made to the inactivity period from the remote.
+      message:
+        $ref: '#/components/messages/inactivity_period'
+    subscribe:
+      summary: Receive the current inactivity period.
+      message:
+        $ref: '#/components/messages/inactivity_period'
+  /SmartPetFeeder/feeding_hours:
+    publish:
+      summary: Publish changes made to the feeding hours from the remote.
+      message:
+        $ref: '#/components/messages/feeding_hours'
+    subscribe:
+      summary: Receive the current feeding hours.
+      message:
+        $ref: '#/components/messages/feeding_hours'
+  /SmartPetFeeder/tanks_status:
+    publish:
+      summary: Publish changes made to the tanks' food quantities.
+      message:
+        $ref: '#/components/messages/tanks_status'
+    subscribe:
+      summary: Receive the current quantities of food left in the tanks.
+      message:
+        $ref: '#/components/messages/tanks_status'
+  /SmartPetFeeder/water_temp:
+    publish:
+      summary: Publish changes made to the water temperature.
+      message:
+        $ref: '#/components/messages/water_temp'
+    subscribe:
+      summary: Receive the current water temperature.
+      message:
+        $ref: '#/components/messages/water_temp'
+  /SmartPetFeeder/wet_food_temp:
+    publish:
+      summary: Publish changes made to the wet food temperature.
+      message:
+        $ref: '#/components/messages/wet_food_temp'
+    subscribe:
+      summary: Receive the current wet food temperature.
+      message:
+        $ref: '#/components/messages/wet_food_temp'
+  /SmartPetFeeder/pet_detection_warning:
+    publish:
+      summary: Publish pet collar detections or inactivity warnings.
+      message:
+        $ref: '#/components/messages/pet_detection_warning'
+    subscribe:
+      summary: Receive the notification.
+      message:
+        $ref: '#/components/messages/pet_detection_warning'
+  /SmartPetFeeder/movement_detection:
+    publish:
+      summary: Publish movement detections.
+      message:
+        $ref: '#/components/messages/movement_detection'
+    subscribe:
+      summary: Receive the notification.
+      message:
+        $ref: '#/components/messages/movement_detection'
+  /SmartPetFeeder/water_mass:
+    publish:
+      summary: Publish changes made to the water mass.
+      message:
+        $ref: '#/components/messages/water_mass'
+    subscribe:
+      summary: Receive the current amount of water left in the tank.
+      message:
+        $ref: '#/components/messages/water_mass'
+  /SmartPetFeeder/wet_food_mass:
+    publish:
+      summary: Publish changes made to the wet food mass.
+      message:
+        $ref: '#/components/messages/wet_food_mass'
+    subscribe:
+      summary: Receive the current amount of wet food left in the tank.
+      message:
+        $ref: '#/components/messages/wet_food_mass'
+  /SmartPetFeeder/dry_food_mass:
+    publish:
+      summary: Publish changes made to the dry food mass.
+      message:
+        $ref: '#/components/messages/dry_food_mass'
+    subscribe:
+      summary: Receive the current amount of dry food left in the tank.
+      message:
+        $ref: '#/components/messages/dry_food_mass'
+components:
+  messages:
+    lightMeasured:
+      title: Heating temperature
+      summary: >-
+        Inform about environmental lighting conditions of a particular
+        streetlight.
+    heating_temperature:
+      title: Heating temperature
+      summary: The temperature at which the water and wet food must be heated.
+    feeding_limit:
+      title: Feeding limit
+      summary: The feeding limit (per meal).
+    inactivity_period:
+      title: Inactivity period
+      summary: The period of pet inactivity after which a notification is issued.
+    feeding_hours:
+      title: Feeding hours
+    tanks_status:
+      title: Tanks status
+      summary: The quantities of food left in each tank.
+    water_temp:
+      title: Water temperature
+      summary: >-
+        The current temperature of the water left in the tank. Includes the
+        timestamp of last modification.
+    wet_food_temp:
+      title: Wet food temperature
+      summary: >-
+        The current temperature of the wet food left in the tank. Includes the
+        timestamp of last modification.
+    pet_detection_warning:
+      title: Pet detection warning
+      summary: >-
+        Notification issued when a pet has just been detected or has been
+        inactive past the inactivity period. Includes timestamp.
+    movement_detection:
+      title: Movement detection
+      summary: >-
+        Notification issued when foreign movement has been detected. Timestamp
+        included.
+    water_mass:
+      title: Water mass
+      summary: The current water mass. Includes timestamp of last modification.
+    wet_food_mass:
+      title: Water mass
+      summary: The current wet food mass. Includes timestamp of last modification.
+    dry_food_mass:
+      title: Dry food mass
+      summary: The current dry food mass. Includes timestamp of last modification.
