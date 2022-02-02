@@ -79,7 +79,7 @@ def init_mqtt():
                 desired_temp = petFeeder.heating_temperature # shouldn't there be separate temperature for water and wet food?
 
                 if desired_temp != current_temp:
-                    print(timestamp + f": Water temp is {current_temp}, heating to {desired_temp}.")
+                    print(timestamp + f": Water temp is {current_temp} °C, heating to {desired_temp} °C.")
             elif data['topic'] == '/SmartPetFeeder/wet_food_temp':
                 current_temp = data['payload'].split(';')
                 timestamp = str(datetime.datetime.now())
