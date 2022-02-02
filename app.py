@@ -24,6 +24,8 @@ petFeeder = None
 socketio = None
 mqtt = None
 
+covered = None
+
 def run_socketio_app():
     global socketio
     socketio = SocketIO(app, async_mode="eventlet")
@@ -59,6 +61,9 @@ def init_mqtt():
 
         @mqtt.on_message()
         def mqtt_thread(client, userdata, message):
+            global covered
+            covered = False
+
             data = dict(
                 topic=message.topic,
                 payload=message.payload.decode()
@@ -154,9 +159,12 @@ def init_mqtt():
                             (msg,)
                         )
                         database.commit()
+                publish(mqtt, '/SmartPetFeeder/ultrasound/', str(4 * 10 ** 5)) # send ultrasound when movement is detected with no collar detection
+                # could be a datapoint, since this is a frequency only cats and dogs can hear
 
-
+            covered = True
         print("Connected to MQTT broker!")
+
 
     except:
         mqtt = None
@@ -171,7 +179,8 @@ def init_app():
         SECRET_KEY='dev',
     )
     
-    petFeeder = PetFeederClass(feeding_hours = [(10, 00)], feeding_limit = 100, inactivity_period = 450, heating_temperature = 15, tanks = [200, 500, 400], pet = PetTypes.DOG)
+    petFeeder = PetFeederClass(feeding_hours = [(10, 00)], feeding_limit = 100, inactivity_period = 450,
+                               heating_temperature = 15, tanks = [200, 500, 400], pet = PetTypes.DOG)
 
     db.init_app(app)
     with app.app_context():
@@ -281,7 +290,7 @@ def init_app():
     @app.route("/set/feeding_hours/", methods=['POST'])
     def set_feeding_hours():
         log_request('POST', '/set/feeding_hours/', request.headers)
-        re_moment = r'(\d?\d):(\d?\d)'
+        re_moment = r'^(2[0-3]|[01]?[0-9]):([0-5]?[0-9])$'
         try:
             values = request.headers["feeding_hours"] # [11:30, 12:45, 19:20, 13:22]
             oldValues = petFeeder.feeding_hours
@@ -290,8 +299,9 @@ def init_app():
                 x = re.search(re_moment, moment)
                 if x is None:
                     raise ValueError
-                hour = int(x.group(1))
-                minute = int(x.group(2))
+
+                hour = int(moment.split(":")[0])
+                minute = int(moment.split(":")[1])
                 if hour > 23 or minute > 59:
                     raise ValueError
                 new.append((hour, minute))
@@ -378,6 +388,8 @@ def init_app():
             food = "water"
         elif food_type == Tanks.WET_FOOD:
             food = "wet food"
+            if q > petFeeder.feeding_limit:
+                q = petFeeder.feeding_limit
         else:
             food = "dry food"
         if q > petFeeder.tanks[food_type]:
@@ -406,7 +418,7 @@ def init_app():
     def give_water():
         log_request('GET', '/action/give_water/', request.headers) 
         args = request.args
-        response, quantity = _get_food_response(args, Tanks.WATER_DEFAULT, Tanks.WATER)
+        response, quantity = _get_food_response(args, Tanks.WATER_DEFAULT_PORTION, Tanks.WATER)
 
         if response.status_code == 200:
             _update_tank_states("simulation" in request.headers, Tanks.WATER, quantity)
@@ -417,7 +429,7 @@ def init_app():
         log_request('GET', '/action/give_wet_food/', request.headers) 
         args = request.args
 
-        response, quantity = _get_food_response(args, Tanks.WET_FOOD_DEFAULT, Tanks.WET_FOOD)
+        response, quantity = _get_food_response(args, Tanks.WET_FOOD_DEFAULT_PORTION, Tanks.WET_FOOD)
         if response.status_code == 200:
             _update_tank_states("simulation" in request.headers, Tanks.WET_FOOD, quantity)
         return response
@@ -427,7 +439,7 @@ def init_app():
         log_request('GET', '/action/give_dry_food/', request.headers) 
         args = request.args
 
-        response, quantity = _get_food_response(args, Tanks.DRY_FOOD_DEFAULT, Tanks.DRY_FOOD)
+        response, quantity = _get_food_response(args, Tanks.DRY_FOOD_DEFAULT_PORTION, Tanks.DRY_FOOD)
         if response.status_code == 200:
             _update_tank_states("simulation" in request.headers, Tanks.DRY_FOOD, quantity)
         return response
@@ -455,6 +467,7 @@ if __name__ == '__main__':
     utils.simMutex = Lock()
 
     if choice.upper() == 'Y':
+        # wait for server response before starting the simulation
         thread_waiting_for_response = Thread(target = wait_for_response)
         thread_waiting_for_response.start()
 
